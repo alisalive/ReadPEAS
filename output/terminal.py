@@ -83,6 +83,8 @@ def print_finding(finding: Dict) -> None:
         header = f"[{severity}] {ftype} -> {binary} ({full_path})"
         if caps:
             header += f"  [{caps}]"
+        if ftype == "sudo" and not finding.get("nopasswd", True):
+            header += "  (password required)"
 
     print(color + header + RESET)
 
