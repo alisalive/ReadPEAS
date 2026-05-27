@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /c/Users/User/ReadPEAS/scripts /c/Users/User/ReadPEAS/data)",
+      "Read(//c/Users/User/ReadPEAS//**)",
+      "Bash(python scripts/build_gtfobins.py)",
+      "Read(//tmp/gtfobins_check/**)",
+      "Bash(python3 -c \"\nimport json\nwith open\\('data/gtfobins.json'\\) as f:\n    db = json.load\\(f\\)\nprint\\(f'Total binaries: {len\\(db\\)}'\\)\nprint\\(f'Has sudo:  {sum\\(1 for v in db.values\\(\\) if \\\\\"sudo\\\\\" in v\\)}'\\)\nprint\\(f'Has suid:  {sum\\(1 for v in db.values\\(\\) if \\\\\"suid\\\\\" in v\\)}'\\)\nprint\\(f'Has capabilities: {sum\\(1 for v in db.values\\(\\) if \\\\\"capabilities\\\\\" in v\\)}'\\)\nprint\\(\\)\nfor name in ['vim', 'python', 'find', 'bash', 'gzip']:\n    if name in db:\n        print\\(f'--- {name} ---'\\)\n        for ctx, cmds in db[name].items\\(\\):\n            print\\(f'  {ctx}: {cmds[0][:80]!r}'\\)\n\")",
+      "Bash(cd \"C:/Users/User/ReadPEAS\" && python modules/linux/sudo.py)",
+      "Bash(cd \"C:/Users/User/ReadPEAS\" && python -c \"import json; db=json.load\\(open\\('data/gtfobins.json'\\)\\); print\\('python3' in db, 'python' in db\\); print\\(list\\(k for k in db if 'python' in k\\)\\)\")",
+      "Bash(python modules/linux/suid.py)",
+      "Bash(cd \"C:\\\\Users\\\\User\\\\ReadPEAS\" && python modules/linux/capabilities.py)",
+      "Bash(cd \"C:\\\\Users\\\\User\\\\ReadPEAS\" && python -m core.extractor)",
+      "Bash(cd \"C:\\\\Users\\\\User\\\\ReadPEAS\" && python output/terminal.py)",
+      "Bash(python -c \"\ntest_input = 'Linux version 5.4.0\\\\n╔══════════╣ Sudo version\\\\n\\(root\\) NOPASSWD: /usr/bin/vim\\\\n╔══════════╣ SUID - Check easy privesc\\\\n/usr/bin/find\\\\n'\nwith open\\('test_linpeas.txt', 'w'\\) as f:\n    f.write\\(test_input\\)\n\" && python readpeas.py -f test_linpeas.txt -o json)",
+      "Bash(python -c \"\ntest_input = 'Linux version 5.4.0\\\\n\\\\u2554\\\\u2550\\\\u2550\\\\u2550\\\\u2550\\\\u2550\\\\u2550\\\\u2550\\\\u2550\\\\u2550\\\\u2550\\\\u2563 Sudo version\\\\n\\(root\\) NOPASSWD: /usr/bin/vim\\\\n\\\\u2554\\\\u2550\\\\u2550\\\\u2550\\\\u2550\\\\u2550\\\\u2550\\\\u2550\\\\u2550\\\\u2550\\\\u2550\\\\u2563 SUID - Check easy privesc\\\\n/usr/bin/find\\\\n'\nwith open\\('test_linpeas.txt', 'w', encoding='utf-8'\\) as f:\n    f.write\\(test_input\\)\n\" && python readpeas.py -f test_linpeas.txt -o json)",
+      "Bash(python readpeas.py --version && python -c \"import os; os.remove\\('test_linpeas.txt'\\)\")",
+      "Bash(python modules/linux/cron.py)",
+      "Bash(cd \"C:\\\\Users\\\\User\\\\ReadPEAS\" && python modules/linux/writable_passwd.py)",
+      "Bash(cd \"C:\\\\Users\\\\User\\\\ReadPEAS\" && python modules/linux/path_hijack.py)",
+      "Bash(cd \"C:\\\\Users\\\\User\\\\ReadPEAS\" && python modules/linux/groups.py)"
+    ]
+  }
+}
