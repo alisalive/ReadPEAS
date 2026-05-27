@@ -27,6 +27,8 @@ from typing import Dict, List, Optional
 
 GTFOBINS_REPO = "https://github.com/GTFOBins/GTFOBins.github.io"
 TARGET_TYPES = {"sudo", "suid", "capabilities"}
+# Only collect commands from these function types; file-read/network/etc. are not privesc.
+RELEVANT_FUNCTION_TYPES = {"shell", "command"}
 OUTPUT_FILE = Path(__file__).parent.parent / "data" / "gtfobins.json"
 
 
@@ -108,20 +110,27 @@ def parse_yaml(yaml_text: str) -> Dict[str, List[str]]:
     ctx_code: List[str] = []
     collecting_ctx: bool = False
 
+    # Function type tracking (shell, file-read, command, ...)
+    current_function_type: str = ""  # most recently seen function type header
+    item_function_type: str = ""     # function type of the currently active item
+
     def emit_item() -> None:
         """Emit commands from the completed item into result, then reset."""
         nonlocal base_code, collecting_base
         nonlocal in_contexts, current_ctx, ctx_overrides, ctx_code, collecting_ctx
+        nonlocal item_function_type
 
         # Flush any pending context code
         _save_ctx(current_ctx, collecting_ctx, ctx_code, ctx_overrides)
 
         base = "\n".join(base_code).strip()
-        for ctx, override in ctx_overrides.items():
-            if ctx in TARGET_TYPES:
-                cmd = override if override is not None else base
-                if cmd:
-                    result.setdefault(ctx, []).append(cmd)
+        # Only emit commands from relevant function types (shell/command give privesc shells).
+        if item_function_type in RELEVANT_FUNCTION_TYPES:
+            for ctx, override in ctx_overrides.items():
+                if ctx in TARGET_TYPES:
+                    cmd = override if override is not None else base
+                    if cmd:
+                        result.setdefault(ctx, []).append(cmd)
 
         # Reset all per-item state
         base_code = []
@@ -131,6 +140,7 @@ def parse_yaml(yaml_text: str) -> Dict[str, List[str]]:
         ctx_overrides = {}
         ctx_code = []
         collecting_ctx = False
+        item_function_type = ""
 
     for line in lines:
         stripped = line.strip()
@@ -146,12 +156,18 @@ def parse_yaml(yaml_text: str) -> Dict[str, List[str]]:
         if indent == 0 and stripped:
             break
 
+        # ── Function type header at indent 2 (e.g. "  shell:", "  file-read:") ───
+        if indent == 2 and not stripped.startswith("- "):
+            current_function_type = stripped.rstrip(":")
+            continue
+
         # ── New list item at indent 2 ──────────────────────────────────────
         # Lines like "  - code: |-" or "  - binary: false"
         if indent == 2 and stripped.startswith("- "):
             if item_active:
                 emit_item()
             item_active = True
+            item_function_type = current_function_type  # record this item's type
             rest = stripped[2:]  # drop the "- " prefix
             if re.match(r"code:\s*\|", rest):
                 collecting_base = True
