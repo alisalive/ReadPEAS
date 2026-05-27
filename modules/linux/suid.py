@@ -33,7 +33,7 @@ def parse_suid_section(section_text: str) -> List[str]:
         # Binary path is the last token starting with '/' (handles ls -l format)
         for token in reversed(stripped.split()):
             if token.startswith("/"):
-                if token not in seen:
+                if not token.startswith("/snap/") and token not in seen:
                     seen.add(token)
                     paths.append(token)
                 break
@@ -81,12 +81,16 @@ def lookup_suid(binary: str) -> List[str]:
     return list(db.get(binary, {}).get("suid", []))
 
 
+_NON_STANDARD_PREFIXES = ("/nfs_share/", "/opt/", "/home/", "/tmp/", "/var/", "/srv/")
+
+
 def analyze(section_text: str) -> List[Dict]:
     """Analyze a SUID section and return a list of structured findings.
 
     Each finding has keys: binary, full_path, severity, type, commands.
     When a normalized candidate matched, matched_as is also included.
-    Severity is CRITICAL when GTFOBins commands exist, otherwise INFO.
+    Severity is CRITICAL when GTFOBins commands exist, HIGH for unknown
+    binaries in non-standard paths, otherwise INFO.
     """
     findings: List[Dict] = []
 
@@ -102,15 +106,25 @@ def analyze(section_text: str) -> List[Dict]:
                 commands = cmds
                 break
 
+        non_standard = any(full_path.startswith(p) for p in _NON_STANDARD_PREFIXES)
+
+        if not commands and non_standard:
+            commands = [f"{full_path} -p", full_path]
+            severity = "HIGH"
+        else:
+            severity = "CRITICAL" if commands else "INFO"
+
         finding: Dict = {
             "binary": os.path.basename(full_path),
             "full_path": full_path,
-            "severity": "CRITICAL" if commands else "INFO",
+            "severity": severity,
             "type": "suid",
             "commands": commands,
         }
         if matched_as is not None:
             finding["matched_as"] = matched_as
+        if non_standard and severity == "HIGH":
+            finding["non_standard"] = True
 
         findings.append(finding)
 

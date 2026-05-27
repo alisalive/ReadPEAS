@@ -87,9 +87,12 @@ def print_finding(finding: Dict) -> None:
     print(color + header + RESET)
 
     if commands:
-        print(DIM + "Commands:" + RESET)
-        for cmd in commands:
-            print("  " + BOLD + "$ " + RESET + cmd)
+        print(DIM + "TRY FIRST:" + RESET)
+        print("  " + BOLD + "$ " + RESET + commands[0])
+        if len(commands) > 1:
+            print(DIM + f"Other options ({len(commands) - 1} more):" + RESET)
+            for cmd in commands[1:]:
+                print("  " + BOLD + "$ " + RESET + cmd)
     else:
         print(DIM + "No exploit commands found." + RESET)
 
