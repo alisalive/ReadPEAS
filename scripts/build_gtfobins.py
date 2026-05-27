@@ -31,6 +31,16 @@ TARGET_TYPES = {"sudo", "suid", "capabilities"}
 RELEVANT_FUNCTION_TYPES = {"shell", "command", "inherit"}
 OUTPUT_FILE = Path(__file__).parent.parent / "data" / "gtfobins.json"
 
+# Substrings used to rank commands from most reliable to least reliable.
+# Commands matching earlier entries in the list are sorted first.
+PRIORITY_COMMANDS = {
+    "vim":  [":shell", ":!/bin/sh", ":set shell"],
+    "vi":   [":shell", ":!/bin/sh"],
+    "nano": ["^R^X"],
+    "less": ["!/bin/sh"],
+    "more": ["!/bin/sh"],
+}
+
 
 # ---------------------------------------------------------------------------
 # Git helpers
@@ -327,6 +337,23 @@ def build_database(gtfobins_dir: Path) -> Dict[str, Dict[str, List[str]]]:
                     if from_cmd == from_binary or from_cmd.startswith(from_binary + " "):
                         rest = from_cmd[len(from_binary):]
                         db[binary_name].setdefault(ctx, []).append(template + rest)
+
+    # Apply priority ordering for known binaries.
+    for binary_name, priority_substrings in PRIORITY_COMMANDS.items():
+        if binary_name not in db:
+            continue
+        for ctx in ("sudo", "suid"):
+            cmds = db[binary_name].get(ctx)
+            if not cmds:
+                continue
+
+            def _rank(cmd: str) -> int:
+                for i, substr in enumerate(priority_substrings):
+                    if substr in cmd:
+                        return i
+                return len(priority_substrings)
+
+            db[binary_name][ctx] = sorted(cmds, key=_rank)
 
     return db
 

