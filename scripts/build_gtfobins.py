@@ -113,12 +113,13 @@ def parse_yaml(yaml_text: str) -> Dict[str, List[str]]:
     # Function type tracking (shell, file-read, command, ...)
     current_function_type: str = ""  # most recently seen function type header
     item_function_type: str = ""     # function type of the currently active item
+    item_from_ref: str = ""          # "from:" field value for inherit items
 
     def emit_item() -> None:
         """Emit commands from the completed item into result, then reset."""
         nonlocal base_code, collecting_base
         nonlocal in_contexts, current_ctx, ctx_overrides, ctx_code, collecting_ctx
-        nonlocal item_function_type
+        nonlocal item_function_type, item_from_ref
 
         # Flush any pending context code
         _save_ctx(current_ctx, collecting_ctx, ctx_code, ctx_overrides)
@@ -130,7 +131,13 @@ def parse_yaml(yaml_text: str) -> Dict[str, List[str]]:
                 if ctx in TARGET_TYPES:
                     cmd = override if override is not None else base
                     if cmd:
-                        result.setdefault(ctx, []).append(cmd)
+                        if item_from_ref:
+                            # Store for second-pass resolution instead of emitting raw
+                            result.setdefault("_inherit", []).append(
+                                (item_from_ref, ctx, cmd)
+                            )
+                        else:
+                            result.setdefault(ctx, []).append(cmd)
 
         # Reset all per-item state
         base_code = []
@@ -141,6 +148,7 @@ def parse_yaml(yaml_text: str) -> Dict[str, List[str]]:
         ctx_code = []
         collecting_ctx = False
         item_function_type = ""
+        item_from_ref = ""
 
     for line in lines:
         stripped = line.strip()
@@ -197,6 +205,8 @@ def parse_yaml(yaml_text: str) -> Dict[str, List[str]]:
                 in_contexts = True
             elif re.match(r"code:\s*\|", stripped):
                 collecting_base = True
+            elif stripped.startswith("from: "):
+                item_from_ref = stripped[6:].strip()
             continue
 
         # ── Inside contexts block ──────────────────────────────────────────
@@ -269,6 +279,12 @@ def process_file(file_path: Path) -> Optional[tuple]:
     return file_path.stem, commands
 
 
+def _extract_code_body(cmd: str) -> Optional[str]:
+    """Extract the quoted argument body from a command like 'binary -c|e 'CODE''."""
+    m = re.search(r"-[ce]\s+'(.+)'$", cmd, re.DOTALL)
+    return m.group(1) if m else None
+
+
 def build_database(gtfobins_dir: Path) -> Dict[str, Dict[str, List[str]]]:
     """Parse all binary files in gtfobins_dir and return the combined database."""
     db: Dict[str, Dict[str, List[str]]] = {}
@@ -291,6 +307,27 @@ def build_database(gtfobins_dir: Path) -> Dict[str, Dict[str, List[str]]]:
 
     if skipped:
         print(f"  (skipped {skipped} files with no relevant data)")
+
+    # Second pass: resolve inherit references.
+    # Mode 1 (template has "..."): extract code body from from-binary's command and substitute.
+    # Mode 2 (no "..."): replace from-binary name prefix in from-binary's commands with template.
+    for binary_name in list(db.keys()):
+        inherit_refs: List[tuple] = db[binary_name].pop("_inherit", [])
+        for from_binary, ctx, template in inherit_refs:
+            from_cmds: List[str] = db.get(from_binary, {}).get(ctx, [])
+            for from_cmd in from_cmds:
+                if "..." in template:
+                    body = _extract_code_body(from_cmd)
+                    if body:
+                        db[binary_name].setdefault(ctx, []).append(
+                            template.replace("...", body)
+                        )
+                else:
+                    # Replace leading from_binary prefix with template
+                    if from_cmd == from_binary or from_cmd.startswith(from_binary + " "):
+                        rest = from_cmd[len(from_binary):]
+                        db[binary_name].setdefault(ctx, []).append(template + rest)
+
     return db
 
 

