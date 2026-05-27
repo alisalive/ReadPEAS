@@ -73,6 +73,19 @@ def lookup_sudo(binary: str) -> List[str]:
     return list(db.get(binary, {}).get("sudo", []))
 
 
+def _prefix_sudo(commands: List[str], binary: str, full_path: str) -> List[str]:
+    """Prepend 'sudo <full_path>' to each command, replacing the leading binary name."""
+    prefixed: List[str] = []
+    for cmd in commands:
+        parts = cmd.split(None, 1)
+        if parts and parts[0] == binary:
+            rest = parts[1] if len(parts) > 1 else ""
+            prefixed.append(f"sudo {full_path} {rest}".rstrip())
+        else:
+            prefixed.append(f"sudo {cmd}")
+    return prefixed
+
+
 def analyze(section_text: str) -> List[Dict]:
     """Analyze a sudo -l section and return a list of structured findings.
 
@@ -94,7 +107,7 @@ def analyze(section_text: str) -> List[Dict]:
             })
             continue
 
-        commands = lookup_sudo(binary)
+        commands = _prefix_sudo(lookup_sudo(binary), binary, full_path)
         if nopasswd:
             severity = "CRITICAL" if commands else "HIGH"
         else:
