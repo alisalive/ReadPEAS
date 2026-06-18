@@ -338,6 +338,23 @@ def build_database(gtfobins_dir: Path) -> Dict[str, Dict[str, List[str]]]:
                         rest = from_cmd[len(from_binary):]
                         db[binary_name].setdefault(ctx, []).append(template + rest)
 
+    # Drop multi-line commands (interactive keystroke sequences, unusable as shell one-liners).
+    for binary_name in db:
+        for ctx in list(db[binary_name].keys()):
+            if ctx == "_inherit":
+                continue
+            db[binary_name][ctx] = [c for c in db[binary_name][ctx] if "\n" not in c]
+
+    # General priority: shell-escape commands (/bin/sh, /bin/bash) rank before file-read/write.
+    def _shell_rank(cmd: str) -> int:
+        return 0 if any(x in cmd for x in ("/bin/sh", "/bin/bash", "/bin/ash", "/bin/dash")) else 1
+
+    for binary_name in db:
+        for ctx in ("sudo", "suid", "capabilities"):
+            cmds = db[binary_name].get(ctx)
+            if cmds:
+                db[binary_name][ctx] = sorted(cmds, key=_shell_rank)
+
     # Apply priority ordering for known binaries.
     for binary_name, priority_substrings in PRIORITY_COMMANDS.items():
         if binary_name not in db:
