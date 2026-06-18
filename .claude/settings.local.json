@@ -33,7 +33,9 @@
       "Bash(cd \"C:/Users/User/ReadPEAS\" && python modules/linux/writable_cron.py)",
       "Bash(cd \"C:/Users/User/ReadPEAS\" && python -m modules.linux.writable_cron)",
       "Bash(cd \"C:/Users/User/ReadPEAS\" && TESTDIR=\"C:/Users/User/AppData/Local/Temp/readpeas_tests\" && for name in test_res test_gamingserver test_anonymous test_skynet test_internal test_startup; do\n  echo \"=== $name ===\"\n  python readpeas.py -f \"$TESTDIR/${name}.txt\" 2>&1 | grep -E \"^\\\\[|\\\\[CRITICAL|\\\\[HIGH|\\\\[MEDIUM\"\n  echo \"\"\ndone)",
-      "Bash(cd \"C:/Users/User/ReadPEAS\" && TESTDIR=\"C:/Users/User/AppData/Local/Temp/readpeas_tests\" && for name in test_res test_gamingserver test_anonymous test_skynet test_internal test_startup; do\n  echo \"=== $name ===\"\n  python readpeas.py -f \"$TESTDIR/${name}.txt\" 2>&1 | grep -E \"\\\\[CRITICAL|\\\\[HIGH|\\\\[MEDIUM\"\n  echo \"\"\ndone)"
+      "Bash(cd \"C:/Users/User/ReadPEAS\" && TESTDIR=\"C:/Users/User/AppData/Local/Temp/readpeas_tests\" && for name in test_res test_gamingserver test_anonymous test_skynet test_internal test_startup; do\n  echo \"=== $name ===\"\n  python readpeas.py -f \"$TESTDIR/${name}.txt\" 2>&1 | grep -E \"\\\\[CRITICAL|\\\\[HIGH|\\\\[MEDIUM\"\n  echo \"\"\ndone)",
+      "Bash(cd C:/Users/User/ReadPEAS && python readpeas.py -f \"C:/Users/User/AppData/Local/Temp/readpeas_tests/test_startup.txt\" 2>&1)",
+      "Bash(cd C:/Users/User/ReadPEAS && for f in res gamingserver anonymous skynet internal; do echo \"=== test_$f ===\"; python readpeas.py -f \"C:/Users/User/AppData/Local/Temp/readpeas_tests/test_$f.txt\" 2>&1 | grep -E '^\\\\[|^\\\\[INFO\\\\]|\\\\[CRITICAL\\\\]|\\\\[HIGH\\\\]|\\\\[MEDIUM\\\\]|Total findings'; echo; done)"
     ]
   }
 }

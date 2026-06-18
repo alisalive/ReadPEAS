@@ -52,6 +52,20 @@ def extract(raw_text: str) -> Dict:
         if matched_chunks:
             findings.extend(analyzer("\n".join(matched_chunks)))
 
+    # Suppress cron HIGH if a writable_cron CRITICAL exists for the same script.
+    writable_cron_scripts = {
+        f["script"] for f in findings
+        if f.get("type") == "writable_cron" and f.get("severity") == "CRITICAL"
+    }
+    if writable_cron_scripts:
+        findings = [
+            f for f in findings
+            if not (
+                f.get("type") == "cron"
+                and f.get("script", "").split()[0] in writable_cron_scripts
+            )
+        ]
+
     findings.sort(key=lambda f: _SEVERITY_ORDER.get(f.get("severity", "INFO"), 4))
 
     return {
