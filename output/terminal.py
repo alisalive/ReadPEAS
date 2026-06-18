@@ -67,6 +67,11 @@ def print_finding(finding: Dict) -> None:
     elif ftype == "writable_file":
         filepath = finding.get("file", "")
         header = f"[{severity}] {ftype} -> {filepath}"
+    elif ftype == "pythonpath":
+        script   = finding.get("script", "")
+        header = f"[{severity}] {ftype} -> {finding.get('full_path', '')} ({script})  [SETENV]"
+        if not finding.get("nopasswd", True):
+            header += "  (password required)"
     elif ftype == "path_hijack":
         wdir = finding.get("writable_dir", "")
         note = finding.get("note", "")

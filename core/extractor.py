@@ -11,6 +11,7 @@ from modules.linux.writable_passwd import analyze as analyze_writable
 from modules.linux.path_hijack import analyze as analyze_path
 from modules.linux.groups import analyze as analyze_groups
 from modules.linux.writable_cron import analyze as analyze_writable_cron
+from modules.linux.pythonpath import analyze as analyze_pythonpath
 
 # Maps each analyzer to the LinPEAS section name keywords it handles.
 SECTION_MAP = [
@@ -22,6 +23,7 @@ SECTION_MAP = [
     (analyze_writable_cron, ["cron", "cronjob", "crontab", "writable", "interesting files"]),
     (analyze_path,          ["path", "environment"]),
     (analyze_groups,        ["groups", "current user", "uid="]),
+    (analyze_pythonpath,    ["sudo", "sudoers"]),
 ]
 
 _SEVERITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}
@@ -51,6 +53,17 @@ def extract(raw_text: str) -> Dict:
         ]
         if matched_chunks:
             findings.extend(analyzer("\n".join(matched_chunks)))
+
+    # Suppress sudo finding when a pythonpath CRITICAL/HIGH covers the same binary
+    # (the SETENV rule restricts python to a specific script, so GTFOBins commands don't apply).
+    pythonpath_binaries = {
+        f["full_path"] for f in findings if f.get("type") == "pythonpath"
+    }
+    if pythonpath_binaries:
+        findings = [
+            f for f in findings
+            if not (f.get("type") == "sudo" and f.get("full_path") in pythonpath_binaries)
+        ]
 
     # Suppress cron HIGH if a writable_cron CRITICAL exists for the same script.
     writable_cron_scripts = {

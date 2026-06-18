@@ -44,9 +44,11 @@ def _parse_sudo_rules(section_text: str) -> List[Tuple[str, str, bool]]:
         m = _SUDO_RULE_RE.search(line)
         if not m:
             continue
-        nopasswd: bool = bool(m.group(1))
-        # First token is the command; the rest are arguments.
-        cmd = m.group(2).strip().split()[0]
+        nopasswd: bool = bool(m.group(1)) or "NOPASSWD" in line.upper()
+        # Strip any residual flag tokens from group(2) (e.g. SETENV: before NOPASSWD:)
+        raw = m.group(2).strip()
+        cmd_part = re.sub(r"^(?:[A-Za-z_]+\s*:\s*)+", "", raw).strip()
+        cmd = cmd_part.split()[0] if cmd_part else ""
         if cmd.upper() == "ALL":
             if "ALL" not in seen:
                 seen.add("ALL")
