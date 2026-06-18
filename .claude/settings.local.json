@@ -18,7 +18,22 @@
       "Bash(python modules/linux/cron.py)",
       "Bash(cd \"C:\\\\Users\\\\User\\\\ReadPEAS\" && python modules/linux/writable_passwd.py)",
       "Bash(cd \"C:\\\\Users\\\\User\\\\ReadPEAS\" && python modules/linux/path_hijack.py)",
-      "Bash(cd \"C:\\\\Users\\\\User\\\\ReadPEAS\" && python modules/linux/groups.py)"
+      "Bash(cd \"C:\\\\Users\\\\User\\\\ReadPEAS\" && python modules/linux/groups.py)",
+      "Bash(python -c \"\nimport json\ndb = json.load\\(open\\('data/gtfobins.json'\\)\\)\nfor b in ['vim', 'bash', 'find', 'python']:\n    entry = db.get\\(b, {}\\)\n    for ctx in ['sudo', 'suid']:\n        cmds = entry.get\\(ctx, []\\)\n        if cmds:\n            print\\(f'{b} {ctx}: {len\\(cmds\\)} cmd\\(s\\) -> {cmds[0][:60]!r}'\\)\n\")",
+      "Bash(python modules/linux/sudo.py)",
+      "Bash(python3 -c \"\nimport json\ndb = json.load\\(open\\('data/gtfobins.json'\\)\\)\nvim = db.get\\('vim', {}\\)\nprint\\('vim sudo commands:'\\)\nfor c in vim.get\\('sudo', []\\):\n    print\\(repr\\(c\\)\\)\nprint\\('vim suid commands:'\\)\nfor c in vim.get\\('suid', []\\):\n    print\\(repr\\(c\\)\\)\n\")",
+      "Bash(python3 -c \"\nimport json\ndb = json.load\\(open\\('data/gtfobins.json'\\)\\)\nfor b in ['python', 'python3', 'vi', 'lua']:\n    e = db.get\\(b, {}\\)\n    print\\(f'--- {b} ---'\\)\n    for ctx in ['sudo', 'suid']:\n        cmds = e.get\\(ctx, []\\)\n        if cmds:\n            print\\(f'  {ctx}: {cmds[:2]}'\\)\n\")",
+      "Bash(python -c \"import json; db=json.load\\(open\\('data/gtfobins.json'\\)\\); print\\('vim sudo:'\\); [print\\(' ', c\\) for c in db['vim'].get\\('sudo',[]\\)]\")",
+      "Read(//c/tmp/readpeas_tests/**)",
+      "Bash(python3 create_tests.py)",
+      "Bash(python3 /tmp/readpeas_tests/create_tests.py)",
+      "Bash(ls \"C:/Users/User/AppData/Local/Temp/readpeas_tests/\" && python \"C:/Users/User/AppData/Local/Temp/readpeas_tests/create_tests.py\")",
+      "Bash(python -c \"\nimport json\nwith open\\('C:/Users/User/ReadPEAS/data/gtfobins.json'\\) as f:\n    db = json.load\\(f\\)\nfor b in ['xxd', 'tee', 'cp', 'dd']:\n    entry = db.get\\(b\\)\n    if entry:\n        print\\(f'{b}: {list\\(entry.keys\\(\\)\\)} -> suid cmds: {entry.get\\(\\\\\"suid\\\\\", []\\)}'\\)\n    else:\n        print\\(f'{b}: NOT FOUND'\\)\n\")",
+      "Bash(cd \"C:/Users/User/ReadPEAS\" && python readpeas.py -f \"C:/Users/User/AppData/Local/Temp/readpeas_tests/test_res.txt\" 2>&1 | grep -E \"CRITICAL|HIGH|xxd|INFO.*xxd\")",
+      "Bash(cd \"C:/Users/User/ReadPEAS\" && python modules/linux/writable_cron.py)",
+      "Bash(cd \"C:/Users/User/ReadPEAS\" && python -m modules.linux.writable_cron)",
+      "Bash(cd \"C:/Users/User/ReadPEAS\" && TESTDIR=\"C:/Users/User/AppData/Local/Temp/readpeas_tests\" && for name in test_res test_gamingserver test_anonymous test_skynet test_internal test_startup; do\n  echo \"=== $name ===\"\n  python readpeas.py -f \"$TESTDIR/${name}.txt\" 2>&1 | grep -E \"^\\\\[|\\\\[CRITICAL|\\\\[HIGH|\\\\[MEDIUM\"\n  echo \"\"\ndone)",
+      "Bash(cd \"C:/Users/User/ReadPEAS\" && TESTDIR=\"C:/Users/User/AppData/Local/Temp/readpeas_tests\" && for name in test_res test_gamingserver test_anonymous test_skynet test_internal test_startup; do\n  echo \"=== $name ===\"\n  python readpeas.py -f \"$TESTDIR/${name}.txt\" 2>&1 | grep -E \"\\\\[CRITICAL|\\\\[HIGH|\\\\[MEDIUM\"\n  echo \"\"\ndone)"
     ]
   }
 }

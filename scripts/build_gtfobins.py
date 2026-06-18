@@ -28,7 +28,7 @@ from typing import Dict, List, Optional
 GTFOBINS_REPO = "https://github.com/GTFOBins/GTFOBins.github.io"
 TARGET_TYPES = {"sudo", "suid", "capabilities"}
 # Only collect commands from these function types; file-read/network/etc. are not privesc.
-RELEVANT_FUNCTION_TYPES = {"shell", "command", "inherit"}
+RELEVANT_FUNCTION_TYPES = {"shell", "command", "inherit", "file-read", "file-write"}
 OUTPUT_FILE = Path(__file__).parent.parent / "data" / "gtfobins.json"
 
 # Substrings used to rank commands from most reliable to least reliable.

@@ -59,7 +59,7 @@ def print_finding(finding: Dict) -> None:
     color    = severity_color(severity)
 
     # Build header based on finding type
-    if ftype == "cron":
+    if ftype in ("cron", "writable_cron"):
         script   = finding.get("script", "")
         schedule = finding.get("schedule", "")
         run_as   = finding.get("run_as", "")

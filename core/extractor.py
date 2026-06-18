@@ -10,16 +10,18 @@ from modules.linux.cron import analyze as analyze_cron
 from modules.linux.writable_passwd import analyze as analyze_writable
 from modules.linux.path_hijack import analyze as analyze_path
 from modules.linux.groups import analyze as analyze_groups
+from modules.linux.writable_cron import analyze as analyze_writable_cron
 
 # Maps each analyzer to the LinPEAS section name keywords it handles.
 SECTION_MAP = [
-    (analyze_sudo,         ["sudo", "sudoers"]),
-    (analyze_suid,         ["suid", "sgid"]),
-    (analyze_capabilities, ["capabilities", "getcap"]),
-    (analyze_cron,         ["cron", "cronjob", "crontab"]),
-    (analyze_writable,     ["writable", "interesting files", "file permissions"]),
-    (analyze_path,         ["path", "environment"]),
-    (analyze_groups,       ["groups", "current user", "uid="]),
+    (analyze_sudo,          ["sudo", "sudoers"]),
+    (analyze_suid,          ["suid", "sgid"]),
+    (analyze_capabilities,  ["capabilities", "getcap"]),
+    (analyze_cron,          ["cron", "cronjob", "crontab"]),
+    (analyze_writable,      ["writable", "interesting files", "file permissions"]),
+    (analyze_writable_cron, ["cron", "cronjob", "crontab", "writable", "interesting files"]),
+    (analyze_path,          ["path", "environment"]),
+    (analyze_groups,        ["groups", "current user", "uid="]),
 ]
 
 _SEVERITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}
