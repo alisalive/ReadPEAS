@@ -1,0 +1,26 @@
+╔══════════╣ Sudo version
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-version
+Sudo version 1.8.31
+
+╔══════════╣ Checking 'sudo -l', /etc/sudoers, and /etc/sudoers.d
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-and-suid
+Matching Defaults entries for webdeveloper on sky:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin, env_keep+=LD_PRELOAD
+
+User webdeveloper may run the following commands on sky:
+    (ALL : ALL) NOPASSWD: /usr/bin/sky_backup_utility
+
+╔══════════╣ SUID - Check easy privesc, exploits and write perms
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-and-suid
+-rwsr-xr-x 1 root root 44K May 2019 /bin/su
+-rwsr-xr-x 1 root root 63K Mar 2019 /bin/umount
+-rwsr-xr-x 1 root root 59K Mar 2019 /usr/bin/passwd
+-rwsr-xr-x 1 root root 40K Mar 2019 /usr/bin/newgrp
+
+╔══════════╣ Capabilities
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#capabilities
+/usr/bin/ping = cap_net_raw+ep
+
+╔══════════╣ Cron jobs
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#scheduled-cron-jobs
+No cron jobs found

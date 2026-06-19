@@ -1,0 +1,28 @@
+╔══════════╣ Sudo version
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-version
+Sudo version 1.8.23
+
+╔══════════╣ Checking 'sudo -l', /etc/sudoers, and /etc/sudoers.d
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-and-suid
+Sorry, user aubreanna may not run sudo on internal.
+
+╔══════════╣ SUID - Check easy privesc, exploits and write perms
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-and-suid
+-rwsr-xr-x 1 root root 44K Mar 2019 /bin/su
+-rwsr-xr-x 1 root root 26K Mar 2019 /bin/umount
+-rwsr-xr-x 1 root root 54K Mar 2019 /usr/bin/passwd
+-rwsr-xr-x 1 root root 40K Mar 2019 /usr/bin/newgrp
+-rwsr-xr-x 1 root root 75K Mar 2019 /usr/bin/gpasswd
+
+╔══════════╣ Capabilities
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#capabilities
+/usr/bin/ping = cap_net_raw+ep
+
+╔══════════╣ Cron jobs
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#scheduled-cron-jobs
+No cron jobs found
+
+╔══════════╣ Interesting Groups - Linux Privesc
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation/interesting-groups-linux-pe
+aubreanna:x:1000:1000:aubreanna:/home/aubreanna:/bin/bash
+uid=1000(aubreanna) gid=1000(aubreanna) groups=1000(aubreanna),4(adm),24(cdrom),30(dip),46(plugdev),108(docker)

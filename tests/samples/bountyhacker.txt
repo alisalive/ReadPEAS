@@ -1,0 +1,26 @@
+╔══════════╣ Sudo version
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-version
+Sudo version 1.8.21p2
+
+╔══════════╣ Checking 'sudo -l', /etc/sudoers, and /etc/sudoers.d
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-and-suid
+Matching Defaults entries for lin on bountyhacker:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
+
+User lin may run the following commands on bountyhacker:
+    (root) NOPASSWD: /usr/bin/tar
+
+╔══════════╣ SUID - Check easy privesc, exploits and write perms
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-and-suid
+-rwsr-xr-x 1 root root 44K May 2017 /bin/su
+-rwsr-xr-x 1 root root 26K Mar 2019 /bin/umount
+-rwsr-xr-x 1 root root 54K May 2017 /usr/bin/passwd
+-rwsr-xr-x 1 root root 40K May 2017 /usr/bin/newgrp
+
+╔══════════╣ Capabilities
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#capabilities
+/usr/bin/ping = cap_net_raw+ep
+
+╔══════════╣ Cron jobs
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#scheduled-cron-jobs
+No cron jobs found

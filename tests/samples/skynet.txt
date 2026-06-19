@@ -1,0 +1,35 @@
+╔══════════╣ Sudo version
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-version
+Sudo version 1.8.21p2
+
+╔══════════╣ Checking 'sudo -l', /etc/sudoers, and /etc/sudoers.d
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-and-suid
+Sorry, user milesdyson may not run sudo on skynet.
+
+╔══════════╣ SUID - Check easy privesc, exploits and write perms
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-and-suid
+-rwsr-xr-x 1 root root 44K May 2017 /bin/su
+-rwsr-xr-x 1 root root 30K Jul 2017 /bin/mount
+-rwsr-xr-x 1 root root 26K Mar 2019 /bin/umount
+-rwsr-xr-x 1 root root 54K May 2017 /usr/bin/passwd
+-rwsr-xr-x 1 root root 40K May 2017 /usr/bin/newgrp
+-rwsr-xr-x 1 root root 75K May 2017 /usr/bin/gpasswd
+
+╔══════════╣ Capabilities
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#capabilities
+/usr/bin/ping = cap_net_raw+ep
+
+╔══════════╣ Cron jobs
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#scheduled-cron-jobs
+/usr/bin/crontab
+-rw-r--r-- 1 root root 1042 Sep 2019 /etc/crontab
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+*/1 * * * * root /home/milesdyson/backups/backup.sh
+
+╔══════════╣ Interesting writable files owned by me or writable by everyone
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#writable-files
+/var/www/html
+/tmp

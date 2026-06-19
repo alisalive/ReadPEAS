@@ -1,0 +1,28 @@
+╔══════════╣ Sudo version
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-version
+Sudo version 1.8.21p2
+
+╔══════════╣ Checking 'sudo -l', /etc/sudoers, and /etc/sudoers.d
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-and-suid
+Sorry, user john may not run sudo on exploitable.
+
+╔══════════╣ SUID - Check easy privesc, exploits and write perms
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-and-suid
+-rwsr-xr-x 1 root root 44K May 2018 /bin/su
+-rwsr-xr-x 1 root root 30K Jul 2018 /bin/mount
+-rwsr-xr-x 1 root root 26K Mar 2019 /bin/umount
+-rwsr-xr-x 1 root root 54K Mar 2019 /usr/bin/passwd
+-rwsr-xr-x 1 root root 40K Mar 2019 /usr/bin/newgrp
+-rwsr-xr-x 1 root root 75K Mar 2019 /usr/bin/gpasswd
+
+╔══════════╣ Capabilities
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#capabilities
+/usr/bin/ping = cap_net_raw+ep
+
+╔══════════╣ Cron jobs
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#scheduled-cron-jobs
+No cron jobs found
+
+╔══════════╣ Interesting Groups - Linux Privesc
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation/interesting-groups-linux-pe
+uid=1000(john) gid=1000(john) groups=1000(john),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),108(lxd)

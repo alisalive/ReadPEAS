@@ -1,0 +1,31 @@
+╔══════════╣ Sudo version
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-version
+Sudo version 1.8.16
+
+╔══════════╣ Checking 'sudo -l', /etc/sudoers, and /etc/sudoers.d
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-and-suid
+Sorry, user kenobi may not run sudo on kenobi.
+
+╔══════════╣ SUID - Check easy privesc, exploits and write perms
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#sudo-and-suid
+-rwsr-xr-x 1 root root 44K May 2017 /bin/su
+-rwsr-xr-x 1 root root 30K Jul 2017 /bin/mount
+-rwsr-xr-x 1 root root 40K May 2017 /usr/bin/chsh
+-rwsr-xr-x 1 root root 75K May 2017 /usr/bin/gpasswd
+-rwsr-xr-x 1 root root 54K May 2017 /usr/bin/passwd
+-rwsr-xr-x 1 root root 23K May 2017 /usr/bin/pkexec
+-rwsr-xr-x 1 root root 40K May 2017 /usr/bin/newgrp
+-rwsr-xr-x 1 root root 18K Jan 2018 /usr/bin/menu
+
+╔══════════╣ Capabilities
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#capabilities
+/usr/bin/ping = cap_net_raw+ep
+
+╔══════════╣ Cron jobs
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#scheduled-cron-jobs
+No cron jobs found
+
+╔══════════╣ Interesting writable files owned by me or writable by everyone
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#writable-files
+/tmp
+/home/kenobi
