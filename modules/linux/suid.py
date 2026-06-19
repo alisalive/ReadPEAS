@@ -81,6 +81,19 @@ def lookup_suid(binary: str) -> List[str]:
     return list(db.get(binary, {}).get("suid", []))
 
 
+def _replace_binary(commands: List[str], matched_as: str, full_path: str) -> List[str]:
+    """Replace the leading GTFOBins generic name with the actual full path in each command."""
+    result = []
+    for cmd in commands:
+        parts = cmd.split(None, 1)
+        if parts and parts[0] == matched_as:
+            rest = (" " + parts[1]) if len(parts) > 1 else ""
+            result.append(full_path + rest)
+        else:
+            result.append(cmd)
+    return result
+
+
 _NON_STANDARD_PREFIXES = ("/nfs_share/", "/opt/", "/home/", "/tmp/", "/var/", "/srv/")
 
 
@@ -104,7 +117,7 @@ def analyze(section_text: str) -> List[Dict]:
             cmds = lookup_suid(candidate)
             if cmds:
                 matched_as = candidate
-                commands = cmds
+                commands = _replace_binary(cmds, candidate, full_path)
                 break
 
         non_standard = any(full_path.startswith(p) for p in _NON_STANDARD_PREFIXES)
