@@ -40,7 +40,8 @@ def parse_writable_files(section_text: str) -> List[str]:
         # Confirm the line signals writability
         lower = line.lower()
         is_writable = (
-            "writable" in lower
+            line == target                # bare path: LinPEAS only lists writable files here
+            or "writable" in lower
             or "rw-rw-rw" in line
             or "-rw-rw-" in line          # group-writable at minimum
             or re.search(r"-[r-][w-][wx]-[r-][w-][wx]-[r-][w-][wx]-", line)

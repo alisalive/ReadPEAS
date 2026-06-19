@@ -7,11 +7,25 @@ from core.extractor import extract
 
 # Each entry: (filename, expected_total, has_critical)
 _SAMPLES = [
-    ("vulnbox.txt",   34, True),
-    ("overpass3.txt", 15, True),
-    ("watcher.txt",   13, True),
-    ("dogcat.txt",     9, True),
-    ("plotted.txt",    8, True),
+    ("vulnbox.txt",      34, True),
+    ("overpass3.txt",    15, True),
+    ("watcher.txt",      13, True),
+    ("dogcat.txt",        9, True),
+    ("plotted.txt",       8, True),
+    ("rootme.txt",       10, True),
+    ("lazyadmin.txt",     6, True),
+    ("simplectf.txt",     5, True),
+    ("anonymous.txt",     9, True),
+    ("startup.txt",       7, True),
+    ("brooklyn99.txt",    5, True),
+    ("bountyhacker.txt",  6, True),
+    ("internal.txt",      8, True),
+    ("skynet.txt",        8, False),
+    ("gamingserver.txt",  9, True),
+    ("ohmywebserver.txt", 6, True),
+    ("road.txt",          7, True),
+    ("chillhack.txt",     6, True),
+    ("kenobi.txt",        9, False),
 ]
 
 _SAMPLES_DIR = os.path.join(os.path.dirname(__file__), "samples")
