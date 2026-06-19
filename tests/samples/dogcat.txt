@@ -1,0 +1,50 @@
+
+  /\_/\  /\_/\  linpeas - Linux Privilege Escalation Awesome Script v3.0.0
+ ( o.o )( o.o ) by carlospolop
+  > ^ <  > ^ <
+
+ [*] Starting Linux Privilege Escalation
+
+╔══════════╣ Basic information
+OS: Linux dogcat 4.15.0-96-generic #97-Ubuntu SMP x86_64 GNU/Linux
+User & Groups: uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+╔══════════╣ Current user/group info
+uid=33(www-data) gid=33(www-data) groups=33(www-data),998(docker)
+/etc/passwd line: www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+
+╔══════════╣ Checking sudo permissions
+Matching Defaults entries for www-data on dogcat:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+User www-data may run the following commands on dogcat:
+    (root) NOPASSWD: /usr/bin/env
+
+╔══════════╣ SUID - Check easy privesc, exploits and write perms
+-rwsr-xr-x 1 root root  68208 Feb 14  2022 /usr/bin/su
+-rwsr-xr-x 1 root root  51024 Sep 13  2023 /usr/bin/newgrp
+-rwsr-xr-x 1 root root  71912 Nov 14  2022 /usr/bin/mount
+-rwsr-xr-x 1 root root  39144 Feb 14  2022 /usr/bin/passwd
+
+╔══════════╣ Capabilities
+
+Current capabilities:
+
+╔══════════╣ Cron jobs
+/etc/crontab:
+* * * * * root /opt/backup.sh
+
+╔══════════╣ Interesting writable files owned by me or writable by everyone
+/var/www/html/uploads
+
+╔══════════╣ Unix Sockets Analysis
+/var/run/docker.sock
+  └─(Read Write Execute )
+  └─(Owned by root)
+  └─High risk: root-owned and writable Unix socket
+
+╔══════════╣ Analyzing Http conf Files (limit 70)
+/etc/apache2/sites-enabled/000-default.conf:
+DB_PASSWORD=hunter2
+
+╔══════════╣ End of script

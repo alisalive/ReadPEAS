@@ -1,0 +1,44 @@
+
+  /\_/\  /\_/\  linpeas - Linux Privilege Escalation Awesome Script v3.0.0
+ ( o.o )( o.o ) by carlospolop
+  > ^ <  > ^ <
+
+ [*] Starting Linux Privilege Escalation
+
+╔══════════╣ Basic information
+OS: Linux plotted 4.15.0-131-generic #135-Ubuntu SMP x86_64 GNU/Linux
+User & Groups: uid=1000(plot_admin) gid=1000(plot_admin) groups=1000(plot_admin)
+
+╔══════════╣ Current user/group info
+uid=1000(plot_admin) gid=1000(plot_admin) groups=1000(plot_admin)
+/etc/passwd line: plot_admin:x:1000:1000::/home/plot_admin:/bin/bash
+
+╔══════════╣ Checking sudo permissions
+Matching Defaults entries for plot_admin on plotted:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+User plot_admin may run the following commands on plotted:
+    (root) /usr/bin/openssl
+
+╔══════════╣ SUID - Check easy privesc, exploits and write perms
+-rwsr-xr-x 1 root root  44784 Jan 20  2024 /usr/bin/python3.8
+-rwsr-xr-x 1 root root  51024 Sep 13  2023 /usr/bin/newgrp
+-rwsr-xr-x 1 root root  71912 Nov 14  2022 /usr/bin/mount
+-rwsr-xr-x 1 root root  35192 Mar 23  2022 /usr/bin/su
+
+╔══════════╣ Capabilities
+
+Current capabilities:
+
+╔══════════╣ Cron jobs
+/etc/crontab:
+* * * * * root /opt/scripts/startup.sh
+
+╔══════════╣ Interesting writable files owned by me or writable by everyone
+-rw-rw-rw- 1 root root 1823 Jan 10 12:00 /etc/passwd
+
+╔══════════╣ Searching passwords in history files
+ History file: /home/plot_admin/.bash_history
+/home/plot_admin/.bash_history:mysql -u root -padmin123
+
+╔══════════╣ End of script

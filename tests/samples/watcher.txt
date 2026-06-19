@@ -1,0 +1,65 @@
+
+  /\_/\  /\_/\  linpeas - Linux Privilege Escalation Awesome Script v3.0.0
+ ( o.o )( o.o ) by carlospolop
+  > ^ <  > ^ <
+
+ [*] Starting Linux Privilege Escalation
+ https://book.hacktricks.xyz/linux-hardening/privilege-escalation
+
+╔══════════╣ Basic information
+OS: Linux watcher 4.15.0-97-generic #98-Ubuntu SMP x86_64 GNU/Linux
+User & Groups: uid=1000(mat) gid=1000(mat) groups=1000(mat)
+
+╔══════════╣ Current user/group info
+uid=1000(mat) gid=1000(mat) groups=1000(mat)
+/etc/passwd line: mat:x:1000:1000:mat:/home/mat:/bin/bash
+
+╔══════════╣ Checking sudo permissions
+Matching Defaults entries for mat on watcher:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+User mat may run the following commands on watcher:
+    (will) NOPASSWD: /usr/bin/python3 /home/mat/scripts/will_script.py *
+
+╔══════════╣ SUID - Check easy privesc, exploits and write perms
+-rwsr-xr-x 1 root root 174872 Dec  3  2023 /usr/bin/sudo
+-rwsr-xr-x 1 root root  51024 Sep 13  2023 /usr/bin/newgrp
+-rwsr-xr-x 1 root root  71912 Nov 14  2022 /usr/bin/mount
+-rwsr-xr-x 1 root root  35192 Mar 23  2022 /usr/bin/umount
+-rwsr-xr-x 1 root root  55544 Feb 14  2022 /usr/bin/at
+
+╔══════════╣ Capabilities
+
+Current capabilities:
+/usr/bin/ping = cap_net_raw+ep
+
+╔══════════╣ Cron jobs
+/etc/crontab:
+*/1 * * * * toby /home/toby/jobs/cow.sh
+*/30 * * * * root /opt/scripts/admin.sh
+0 */12 * * * root /bin/bash /opt/processes.sh
+
+╔══════════╣ PATH
+https://book.hacktricks.xyz/linux-hardening/privilege-escalation#path
+
+Current PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/tmp
+Writable dir in PATH: /tmp
+
+╔══════════╣ Writable scripts in cron path
+-rwxr-xr-x 1 root root  256 Dec  1  2021 /usr/local/bin/cleanup.sh
+-rwxrwxr-x 1 root will  512 Dec  1  2021 /usr/local/sbin/dev_backup.sh
+
+╔══════════╣ Interesting writable files owned by me or writable by everyone
+/home/toby/jobs/cow.sh
+/tmp/logfile.txt
+
+╔══════════╣ Writable log files (logrotten) (limit 100)
+logrotate 3.14.0
+/var/log/nginx/access.log
+
+╔══════════╣ Searching passwords in history files
+ History file: /home/mat/.bash_history
+/home/mat/.bash_history:mysql -u root -psecretpass
+
+╔══════════╣ End of script

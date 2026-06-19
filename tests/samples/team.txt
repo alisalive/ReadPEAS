@@ -1,0 +1,41 @@
+
+  /\_/\  /\_/\  linpeas - Linux Privilege Escalation Awesome Script v3.0.0
+ ( o.o )( o.o ) by carlospolop
+  > ^ <  > ^ <
+
+╔══════════╣ Basic information
+OS: Linux team 4.15.0-112-generic #113-Ubuntu SMP x86_64 GNU/Linux
+User & Groups: uid=1000(dale) gid=1000(dale) groups=1000(dale)
+
+╔══════════╣ Current user/group info
+uid=1000(dale) gid=1000(dale) groups=1000(dale)
+/etc/passwd line: dale:x:1000:1000:dale:/home/dale:/bin/bash
+
+╔══════════╣ Checking sudo permissions
+Matching Defaults entries for dale on team:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+User dale may run the following commands on team:
+    (root) NOPASSWD: /usr/bin/awk
+
+╔══════════╣ SUID - Check easy privesc, exploits and write perms
+-rwsr-xr-x 1 root root  51024 Sep 13  2023 /usr/bin/newgrp
+-rwsr-xr-x 1 root root  68208 Feb 14  2022 /usr/bin/su
+
+╔══════════╣ Capabilities
+
+Current capabilities:
+/usr/bin/ping = cap_net_raw+ep
+
+╔══════════╣ Cron jobs
+/etc/crontab:
+* * * * * root /usr/local/bin/main_backup.sh
+
+╔══════════╣ Writable scripts in cron path
+-rwxr-xr-x 1 root root  64 Dec 26  2020 /usr/local/bin/main_backup.sh
+-rwxrwxr-x 1 root gyles 74 Dec 26  2020 /usr/local/sbin/dev_backup.sh
+
+╔══════════╣ Interesting writable files owned by me or writable by everyone
+/home/dale/work
+
+╔══════════╣ End of script
