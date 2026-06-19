@@ -72,6 +72,15 @@ def print_finding(finding: Dict) -> None:
         header = f"[{severity}] {ftype} -> {finding.get('full_path', '')} ({script})  [SETENV]"
         if not finding.get("nopasswd", True):
             header += "  (password required)"
+    elif ftype == "ld_preload":
+        env_var  = finding.get("env_var", "")
+        sudo_cmd = finding.get("sudo_command", "")
+        header = f"[{severity}] {ftype} -> {env_var} (via: {sudo_cmd})"
+        if not finding.get("nopasswd", True):
+            header += "  (password required)"
+    elif ftype == "nfs":
+        export_path = finding.get("export_path", "")
+        header = f"[{severity}] {ftype} -> {export_path} (no_root_squash)"
     elif ftype == "path_hijack":
         wdir = finding.get("writable_dir", "")
         note = finding.get("note", "")

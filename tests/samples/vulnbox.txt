@@ -1,0 +1,102 @@
+
+  /\_/\  /\_/\  linpeas - Linux Privilege Escalation Awesome Script v3.0.0
+ ( o.o )( o.o ) by carlospolop
+  > ^ <  > ^ <
+
+ [*] Starting Linux Privilege Escalation
+ https://book.hacktricks.xyz/linux-hardening/privilege-escalation
+
+╔══════════╣ Basic information
+OS: Linux vulnbox 5.15.0-88-generic #98-Ubuntu SMP x86_64 GNU/Linux
+User & Groups: uid=1000(ctf) gid=1000(ctf) groups=1000(ctf),998(docker)
+
+╔══════════╣ Current user/group info
+uid=1000(ctf) gid=1000(ctf) groups=1000(ctf),998(docker)
+/etc/passwd line: ctf:x:1000:1000:CTF Player,,,:/home/ctf:/bin/bash
+
+╔══════════╣ Checking sudo permissions
+Matching Defaults entries for ctf on vulnbox:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin,
+    env_keep+=LD_PRELOAD
+
+User ctf may run the following commands on vulnbox:
+    (root) NOPASSWD: /usr/bin/vim
+    (root) SETENV: NOPASSWD: /usr/bin/python3 /opt/monitor.py
+    (root) /usr/bin/find
+
+╔══════════╣ Checking if /etc/sudoers is available and readable
+/etc/sudoers is available
+
+╔══════════╣ SUID - Check easy privesc, exploits and write perms
+-rwsr-xr-x 1 root root 174872 Dec  3  2023 /usr/bin/sudo
+-rwsr-xr-x 1 root root  51024 Sep 13  2023 /usr/bin/newgrp
+-rwsr-xr-x 1 root root 166056 Jan 19  2024 /usr/bin/find
+-rwsr-xr-x 1 root root  44784 Jan 20  2024 /usr/bin/python3.9
+-rwsr-xr-x 1 root root  35192 Mar 23  2022 /usr/bin/vim.basic
+-rwsr-xr-x 1 root root  71912 Nov 14  2022 /usr/bin/mount
+-rwsr-xr-x 1 root root  35192 Mar 23  2022 /usr/bin/umount
+-rwsr-xr-x 1 root root  85064 Feb 14  2022 /usr/bin/chfn
+-rwsr-xr-x 1 root root  53040 Feb 14  2022 /usr/bin/chsh
+-rwsr-xr-x 1 root root  39144 Feb 14  2022 /usr/bin/passwd
+-rwsr-xr-x 1 root root  68208 Feb 14  2022 /usr/bin/gpasswd
+-rwsr-xr-x 1 root root  47480 Feb 14  2022 /usr/sbin/mount.nfs
+
+╔══════════╣ Capabilities
+https://book.hacktricks.xyz/linux-hardening/privilege-escalation#capabilities
+
+Current capabilities:
+/usr/bin/python3.9 = cap_setuid+ep
+/usr/bin/ping = cap_net_raw+ep
+/usr/bin/tcpdump = cap_net_admin+eip
+
+╔══════════╣ Cron jobs
+/etc/crontab:
+* * * * * root /opt/scripts/backup.sh
+*/5 * * * * root /opt/scripts/monitor.sh
+0 2 * * * root /usr/bin/find /var -name "*.log" -delete
+0 4 * * 0 root /usr/bin/apt-get -y update
+
+/var/spool/cron/crontabs:
+# no user crontabs found
+
+╔══════════╣ Writable files
+https://book.hacktricks.xyz/linux-hardening/privilege-escalation#writable-files
+
+╔══════════╣ Interesting writable files owned by me or writable by everyone
+-rw-rw-rw- 1 root root   1823 Jan 10 12:00 /etc/passwd
+-rwxrwxrwx 1 root root    512 Mar  5  2024 /opt/scripts/backup.sh
+-rw-rw-rw- 1 root root    128 Mar  5  2024 /tmp/logfile.txt
+
+╔══════════╣ PATH
+https://book.hacktricks.xyz/linux-hardening/privilege-escalation#path
+
+Current PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/tmp
+Writable dir in PATH: /tmp
+
+╔══════════╣ Environment variables
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/tmp
+HOME=/home/ctf
+LANG=en_US.UTF-8
+TERM=xterm-256color
+
+╔══════════╣ NFS exports
+https://book.hacktricks.xyz/linux-hardening/privilege-escalation#nfs
+
+No root squash:
+/etc/exports: /opt/share *(rw,sync,insecure,no_root_squash,no_subtree_check)
+
+╔══════════╣ Useful software
+/usr/bin/wget
+/usr/bin/curl
+/usr/bin/gcc
+/usr/bin/python3
+/usr/bin/python3.9
+/usr/bin/perl
+/usr/bin/nc
+
+╔══════════╣ Searching passwords in history files
+ History file: /home/ctf/.bash_history
+ Nothing interesting found
+
+╔══════════╣ End of script

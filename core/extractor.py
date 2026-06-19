@@ -12,6 +12,8 @@ from modules.linux.path_hijack import analyze as analyze_path
 from modules.linux.groups import analyze as analyze_groups
 from modules.linux.writable_cron import analyze as analyze_writable_cron
 from modules.linux.pythonpath import analyze as analyze_pythonpath
+from modules.linux.ld_preload import analyze as analyze_ld_preload
+from modules.linux.nfs import analyze as analyze_nfs
 
 # Maps each analyzer to the LinPEAS section name keywords it handles.
 SECTION_MAP = [
@@ -24,6 +26,8 @@ SECTION_MAP = [
     (analyze_path,          ["path", "environment"]),
     (analyze_groups,        ["groups", "current user", "uid="]),
     (analyze_pythonpath,    ["sudo", "sudoers"]),
+    (analyze_ld_preload,    ["sudo", "sudoers"]),
+    (analyze_nfs,           ["nfs", "exports", "no_root_squash", "mount"]),
 ]
 
 _SEVERITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}
