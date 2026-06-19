@@ -79,10 +79,10 @@ def extract(raw_text: str) -> Dict:
             if not (f.get("type") == "sudo" and f.get("full_path") in pythonpath_binaries)
         ]
 
-    # Suppress cron HIGH if a writable_cron CRITICAL exists for the same script.
+    # Suppress cron finding if a writable_cron finding exists for the same script.
     writable_cron_scripts = {
         f["script"] for f in findings
-        if f.get("type") == "writable_cron" and f.get("severity") == "CRITICAL"
+        if f.get("type") == "writable_cron"
     }
     if writable_cron_scripts:
         findings = [

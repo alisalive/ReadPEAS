@@ -25,39 +25,64 @@ def _load_db() -> Dict:
 #   (root) NOPASSWD: /usr/bin/vim
 #   (ALL : ALL) NOPASSWD: ALL
 #   (root) /usr/bin/find
-#   (ALL : ALL) /usr/bin/vim
-# Group 1: "NOPASSWD: " prefix (or None); Group 2: command string
+#   (will) NOPASSWD: /usr/bin/python3 /opt/script.py *
+# Group 1: sudo user spec; Group 2: "NOPASSWD: " prefix (or None); Group 3: command string
 _SUDO_RULE_RE = re.compile(
-    r"\([^)]+\)\s+(NOPASSWD\s*:\s*)?(.+)",
+    r"\(([^)]+)\)\s+(NOPASSWD\s*:\s*)?(.+)",
     re.IGNORECASE,
 )
 
 
 # ── Internal helpers ───────────────────────────────────────────────────────────
 
-def _parse_sudo_rules(section_text: str) -> List[Tuple[str, str, bool]]:
-    """Return (binary_name, full_path, nopasswd) tuples from sudo -l section text."""
-    rules: List[Tuple[str, str, bool]] = []
+def normalize_binary(name: str) -> List[str]:
+    """Return candidate GTFOBins lookup names for a binary name, from specific to generic.
+
+    Examples: python3 -> ["python3", "python"]; vim.basic -> ["vim.basic", "vim"]
+    """
+    candidates: List[str] = []
+    seen: set = set()
+    current = name
+    while current:
+        if current not in seen:
+            seen.add(current)
+            candidates.append(current)
+        no_suffix = re.sub(r"\.[^.]+$", "", current)
+        if no_suffix and no_suffix != current:
+            current = no_suffix
+            continue
+        no_digits = re.sub(r"\d+$", "", current)
+        if no_digits and no_digits != current:
+            current = no_digits
+            continue
+        break
+    return candidates
+
+
+def _parse_sudo_rules(section_text: str) -> List[Tuple[str, str, bool, str]]:
+    """Return (binary_name, full_path, nopasswd, sudo_user) tuples from sudo -l section text."""
+    rules: List[Tuple[str, str, bool, str]] = []
     seen: set = set()
 
     for line in section_text.splitlines():
         m = _SUDO_RULE_RE.search(line)
         if not m:
             continue
-        nopasswd: bool = bool(m.group(1)) or "NOPASSWD" in line.upper()
-        # Strip any residual flag tokens from group(2) (e.g. SETENV: before NOPASSWD:)
-        raw = m.group(2).strip()
+        sudo_user: str = m.group(1).strip()
+        nopasswd: bool = bool(m.group(2)) or "NOPASSWD" in line.upper()
+        # Strip any residual flag tokens from group(3) (e.g. SETENV: before NOPASSWD:)
+        raw = m.group(3).strip()
         cmd_part = re.sub(r"^(?:[A-Za-z_]+\s*:\s*)+", "", raw).strip()
         cmd = cmd_part.split()[0] if cmd_part else ""
         if cmd.upper() == "ALL":
             if "ALL" not in seen:
                 seen.add("ALL")
-                rules.append(("ALL", "ALL", nopasswd))
+                rules.append(("ALL", "ALL", nopasswd, sudo_user))
             continue
         name = os.path.basename(cmd)
         if name and name not in seen:
             seen.add(name)
-            rules.append((name, cmd, nopasswd))
+            rules.append((name, cmd, nopasswd, sudo_user))
 
     return rules
 
@@ -66,7 +91,7 @@ def _parse_sudo_rules(section_text: str) -> List[Tuple[str, str, bool]]:
 
 def parse_sudo_section(section_text: str) -> List[str]:
     """Extract binary names from sudo -l output lines."""
-    return [name for name, _, _ in _parse_sudo_rules(section_text)]
+    return [name for name, _, _, _ in _parse_sudo_rules(section_text)]
 
 
 def lookup_sudo(binary: str) -> List[str]:
@@ -75,16 +100,20 @@ def lookup_sudo(binary: str) -> List[str]:
     return list(db.get(binary, {}).get("sudo", []))
 
 
-def _prefix_sudo(commands: List[str], binary: str, full_path: str) -> List[str]:
-    """Prepend 'sudo <full_path>' to each command, replacing the leading binary name."""
+def _prefix_sudo(commands: List[str], binary: str, full_path: str, sudo_user: str = "") -> List[str]:
+    """Prepend 'sudo [-u user] <full_path>' to each command, replacing the leading binary name."""
+    # Build user flag: omit for root/ALL, include for specific users like "will"
+    raw_user = sudo_user.split(":")[0].strip()
+    user_flag = f"-u {raw_user} " if raw_user.upper() not in ("ROOT", "ALL", "") else ""
+
     prefixed: List[str] = []
     for cmd in commands:
         parts = cmd.split(None, 1)
         if parts and parts[0] == binary:
             rest = parts[1] if len(parts) > 1 else ""
-            prefixed.append(f"sudo {full_path} {rest}".rstrip())
+            prefixed.append(f"sudo {user_flag}{full_path} {rest}".rstrip())
         else:
-            prefixed.append(f"sudo {cmd}")
+            prefixed.append(f"sudo {user_flag}{cmd}")
     return prefixed
 
 
@@ -92,12 +121,11 @@ def analyze(section_text: str) -> List[Dict]:
     """Analyze a sudo -l section and return a list of structured findings.
 
     Each finding has keys: binary, full_path, severity, type, nopasswd, commands.
-    Severity: NOPASSWD + commands -> CRITICAL; NOPASSWD only -> HIGH;
-              password required + commands -> HIGH; otherwise -> INFO.
+    Severity: NOPASSWD -> always CRITICAL; password required + commands -> HIGH; otherwise INFO.
     """
     findings: List[Dict] = []
 
-    for binary, full_path, nopasswd in _parse_sudo_rules(section_text):
+    for binary, full_path, nopasswd, sudo_user in _parse_sudo_rules(section_text):
         if binary == "ALL":
             findings.append({
                 "binary": "ALL",
@@ -109,20 +137,34 @@ def analyze(section_text: str) -> List[Dict]:
             })
             continue
 
-        commands = _prefix_sudo(lookup_sudo(binary), binary, full_path)
+        # Try binary name and fallbacks (e.g. python3 -> python) for GTFOBins lookup
+        commands: List[str] = []
+        matched_as: Optional[str] = None
+        for candidate in normalize_binary(binary):
+            cmds = lookup_sudo(candidate)
+            if cmds:
+                matched_as = candidate
+                commands = _prefix_sudo(cmds, candidate, full_path, sudo_user)
+                break
+
+        # NOPASSWD is always CRITICAL — attacker can run the binary without a password
         if nopasswd:
-            severity = "CRITICAL" if commands else "HIGH"
+            severity = "CRITICAL"
         else:
             severity = "HIGH" if commands else "INFO"
 
-        findings.append({
+        finding: Dict = {
             "binary": binary,
             "full_path": full_path,
             "severity": severity,
             "type": "sudo",
             "nopasswd": nopasswd,
             "commands": commands,
-        })
+        }
+        if matched_as is not None and matched_as != binary:
+            finding["matched_as"] = matched_as
+
+        findings.append(finding)
 
     return findings
 

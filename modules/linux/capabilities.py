@@ -31,6 +31,10 @@ _EXPLOITABLE_CAPS = {
     "cap_net_raw",
 }
 
+# Caps that are always CRITICAL regardless of GTFOBins coverage, because they
+# allow manual privilege escalation (setuid C program, Python one-liner, etc.)
+_ALWAYS_CRITICAL_CAPS = {"cap_setuid", "cap_setgid", "cap_sys_admin"}
+
 # Matches getcap output lines:
 #   /usr/bin/python3.9 = cap_setuid+ep
 #   /usr/bin/perl = cap_setuid+eip
@@ -150,7 +154,16 @@ def analyze(section_text: str) -> List[Dict]:
                     commands = _replace_binary(cmds, candidate, full_path)
                     break
 
-        if exploitable and commands:
+        caps_lower = caps.lower()
+        is_always_critical = any(c in caps_lower for c in _ALWAYS_CRITICAL_CAPS)
+
+        if is_always_critical and not commands:
+            commands = [
+                f"# {full_path} has {caps} - manual exploit:",
+                f"cp /bin/bash /tmp/rootbash && {full_path} -c 'chmod +s /tmp/rootbash' && /tmp/rootbash -p",
+            ]
+
+        if exploitable and (commands or is_always_critical):
             severity = "CRITICAL"
         elif exploitable:
             severity = "HIGH"
