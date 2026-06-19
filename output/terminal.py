@@ -89,6 +89,20 @@ def print_finding(finding: Dict) -> None:
         group = finding.get("group", "")
         desc  = finding.get("description", "")
         header = f"[{severity}] {ftype} -> {group}  {desc}"
+    elif ftype == "systemd_service":
+        service_path = finding.get("service_path", "")
+        header = f"[{severity}] {ftype} -> {service_path}"
+    elif ftype == "logrotate":
+        log_path = finding.get("log_path", "")
+        header = f"[{severity}] {ftype} -> {log_path}  (logrotten)"
+    elif ftype == "mysql_udf":
+        header = f"[{severity}] {ftype} -> mysqld running as root  (UDF injection)"
+    elif ftype == "docker_sock":
+        header = f"[{severity}] {ftype} -> /var/run/docker.sock  (writable)"
+    elif ftype == "credential":
+        password = finding.get("password", "")
+        context  = finding.get("context", "")
+        header = f"[{severity}] {ftype} -> {password!r}  ({context})"
     else:
         # sudo / suid / capabilities
         binary    = finding.get("binary", "")

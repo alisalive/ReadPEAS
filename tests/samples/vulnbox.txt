@@ -95,8 +95,47 @@ No root squash:
 /usr/bin/perl
 /usr/bin/nc
 
+╔══════════╣ Permissions in init, init.d, systemd, and rc.d
+-rwxrwxrwx 1 root root 512 Mar  5  2024 /etc/systemd/system/webapp.service
+-rw-r--r-- 1 root root 256 Jan 10 12:00 /etc/systemd/system/ssh.service
+-rwxrwxrwx 1 root root 128 Jan 10 12:00 /lib/systemd/system/backup.timer
+
+╔══════════╣ Interesting writable files owned by me or writable by everyone
+-rw-rw-rw- 1 root root   1823 Jan 10 12:00 /etc/passwd
+-rwxrwxrwx 1 root root    512 Mar  5  2024 /opt/scripts/backup.sh
+-rw-rw-rw- 1 root root    128 Mar  5  2024 /tmp/logfile.txt
+/etc/systemd/system/backup.service
+/var/run/docker.sock (writable)
+
+╔══════════╣ Writable log files (logrotten) (limit 100)
+╚ https://book.hacktricks.xyz/linux-unix/privilege-escalation#logrotate-exploitation
+logrotate 3.14.0
+Default mail command: /usr/bin/mail
+Default compress command: /bin/gzip
+/var/log/apache2/access.log
+/home/ctf/backups/access.log
+
+╔══════════╣ Processes with unusual configurations
+root        987  0.0  0.4 126416 17448 ?        Ssl  Jan10   0:02 /usr/sbin/mysqld --user=root
+ctf        1234  0.0  0.1   5700  3412 pts/0    S+   12:00   0:00 /bin/bash
+
+╔══════════╣ Unix Sockets Analysis
+/var/run/docker.sock
+  └─(Read Write Execute )
+  └─(Owned by root)
+  └─High risk: root-owned and writable Unix socket
+/run/systemd/private/tmp-ramfs.uGiODV/tmp.mount
+  └─(Read Write )
+
+╔══════════╣ Analyzing Http conf Files (limit 70)
+/etc/apache2/sites-enabled/000-default.conf:
+DB_PASSWORD=supersecret
+password = secret123
+database_host = localhost
+
 ╔══════════╣ Searching passwords in history files
  History file: /home/ctf/.bash_history
- Nothing interesting found
+/home/ctf/.bash_history:mysql -u root -psecret123
+/home/ctf/.bash_history:scp backup.tar.gz admin@192.168.1.1:/backups
 
 ╔══════════╣ End of script

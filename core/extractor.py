@@ -14,6 +14,11 @@ from modules.linux.writable_cron import analyze as analyze_writable_cron
 from modules.linux.pythonpath import analyze as analyze_pythonpath
 from modules.linux.ld_preload import analyze as analyze_ld_preload
 from modules.linux.nfs import analyze as analyze_nfs
+from modules.linux.systemd_service import analyze as analyze_systemd
+from modules.linux.logrotate import analyze as analyze_logrotate
+from modules.linux.mysql_udf import analyze as analyze_mysql_udf
+from modules.linux.docker_sock import analyze as analyze_docker_sock
+from modules.linux.credentials import analyze as analyze_credentials
 
 # Maps each analyzer to the LinPEAS section name keywords it handles.
 SECTION_MAP = [
@@ -28,6 +33,11 @@ SECTION_MAP = [
     (analyze_pythonpath,    ["sudo", "sudoers"]),
     (analyze_ld_preload,    ["sudo", "sudoers"]),
     (analyze_nfs,           ["nfs", "exports", "no_root_squash", "mount"]),
+    (analyze_systemd,       ["init", "systemd", "rc.d", "interesting files", "writable"]),
+    (analyze_logrotate,     ["logrotten", "writable log"]),
+    (analyze_mysql_udf,     ["processes", "mysql", "software", "interesting processes"]),
+    (analyze_docker_sock,   ["unix sockets", "sockets", "interesting files", "writable"]),
+    (analyze_credentials,   ["password", "credential", "backup", "wordpress", "http conf", "analyzing", "history"]),
 ]
 
 _SEVERITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}

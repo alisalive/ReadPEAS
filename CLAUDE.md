@@ -41,11 +41,24 @@ binary_name -> capabilities: [command1]
 CRITICAL -> HIGH -> MEDIUM -> LOW -> INFO
 
 ## Current status
-- [ ] scripts/build_gtfobins.py
-- [ ] core/parser.py
-- [ ] core/extractor.py
-- [ ] modules/linux/sudo.py
-- [ ] modules/linux/suid.py
-- [ ] modules/linux/capabilities.py
-- [ ] output/terminal.py
-- [ ] readpeas.py (CLI)
+- [x] scripts/build_gtfobins.py
+- [x] core/parser.py
+- [x] core/extractor.py
+- [x] modules/linux/sudo.py
+- [x] modules/linux/suid.py
+- [x] modules/linux/capabilities.py
+- [x] modules/linux/cron.py
+- [x] modules/linux/writable_passwd.py
+- [x] modules/linux/writable_cron.py
+- [x] modules/linux/path_hijack.py
+- [x] modules/linux/groups.py
+- [x] modules/linux/pythonpath.py
+- [x] modules/linux/ld_preload.py
+- [x] modules/linux/nfs.py
+- [x] modules/linux/systemd_service.py
+- [x] modules/linux/logrotate.py
+- [x] modules/linux/mysql_udf.py
+- [x] modules/linux/docker_sock.py
+- [x] modules/linux/credentials.py
+- [x] output/terminal.py
+- [x] readpeas.py (CLI)
