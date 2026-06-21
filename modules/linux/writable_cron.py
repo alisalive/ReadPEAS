@@ -15,6 +15,9 @@ _CRON_LINE_RE = re.compile(r"^(?:[\d*/,\-]+\s+){4}[\d*/,\-]|^\s*@\w+")
 # Matches an ls -l permission string at the start of a line
 _PERM_LINE_RE = re.compile(r"^([-dlbcsp](?:[r-][w-][xsStT-]){3})")
 
+# "Contents of /path/file:" lines show file contents — not writable-file indicators
+_CONTENTS_HEADER_RE = re.compile(r"^Contents of /", re.IGNORECASE)
+
 
 def _is_perm_writable(perm: str) -> bool:
     """Return True if the ls -l permission string has group-write or other-write."""
@@ -49,6 +52,11 @@ def parse_writable_paths(section_text: str) -> Tuple[Set[str], Set[str]]:
         if not line or line.startswith("#"):
             continue
         if _CRON_LINE_RE.match(line):
+            continue
+        if _CONTENTS_HEADER_RE.match(line):
+            continue
+        # Skip shebang lines and script content lines (from "Contents of" blocks)
+        if line.startswith("#!") or line.startswith("cd ") or line.startswith("SHELL=") or line.startswith("PATH="):
             continue
 
         perm_m = _PERM_LINE_RE.match(line)

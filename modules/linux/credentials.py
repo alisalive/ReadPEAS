@@ -94,6 +94,8 @@ def generate_commands(password: str) -> List[str]:
         f"su $(whoami)  # try password: {password}",
         f"ssh root@localhost  # try password: {password}",
         f"ssh $(whoami)@localhost  # try password: {password}",
+        f"# Try credential reuse: su - <user>  |  password: {password}",
+        f"# Or: ssh <user>@LHOST  with above password",
     ]
 
 

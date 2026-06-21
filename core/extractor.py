@@ -19,6 +19,7 @@ from modules.linux.logrotate import analyze as analyze_logrotate
 from modules.linux.mysql_udf import analyze as analyze_mysql_udf
 from modules.linux.docker_sock import analyze as analyze_docker_sock
 from modules.linux.credentials import analyze as analyze_credentials
+from modules.linux.wildcard_injection import analyze as analyze_wildcard
 
 # Maps each analyzer to the LinPEAS section name keywords it handles.
 SECTION_MAP = [
@@ -38,6 +39,7 @@ SECTION_MAP = [
     (analyze_mysql_udf,     ["processes", "mysql", "software", "interesting processes"]),
     (analyze_docker_sock,   ["unix sockets", "sockets", "interesting files", "writable"]),
     (analyze_credentials,   ["password", "credential", "backup", "wordpress", "http conf", "analyzing", "history"]),
+    (analyze_wildcard,      ["cron", "cronjob", "crontab"]),
 ]
 
 _SEVERITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}

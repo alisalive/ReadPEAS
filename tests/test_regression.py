@@ -20,7 +20,7 @@ _SAMPLES = [
     ("brooklyn99.txt",    5, True),
     ("bountyhacker.txt",  6, True),
     ("internal.txt",      8, True),
-    ("skynet.txt",        8, False),
+    ("skynet.txt",        9, False),
     ("gamingserver.txt",  9, True),
     ("ohmywebserver.txt", 6, True),
     ("road.txt",          7, True),

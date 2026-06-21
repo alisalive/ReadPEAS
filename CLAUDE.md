@@ -19,10 +19,10 @@ Rule-based, no AI, installable via pip.
 - Use Plan Mode (Shift+Tab) to confirm plan before writing code
 
 ## Phase plan
-- Phase 1 (current): core + Linux critical (sudo, suid, capabilities)
-- Phase 2: Linux high (cron, writable passwd, PATH hijack, groups)
+- Phase 1 (done): core + Linux critical (sudo, suid, capabilities)
+- Phase 2 (done): Linux high (cron, writable passwd, PATH hijack, groups, ld_preload, nfs, etc.)
 - Phase 3: Windows (WinPEAS)
-- Phase 4: Polish (pip package, markdown/JSON export)
+- Phase 4 (partial): Polish — markdown export done; pip package pending
 
 ## Code standards
 - Python 3.8+ compatible
@@ -42,23 +42,24 @@ CRITICAL -> HIGH -> MEDIUM -> LOW -> INFO
 
 ## Current status
 - [x] scripts/build_gtfobins.py
-- [x] core/parser.py
+- [x] core/parser.py                  — sub-header (╚═══╣) stripping added
 - [x] core/extractor.py
 - [x] modules/linux/sudo.py
-- [x] modules/linux/suid.py
+- [x] modules/linux/suid.py           — _KNOWN_SAFE set; unknown standard-path SUID → HIGH with note
 - [x] modules/linux/capabilities.py
 - [x] modules/linux/cron.py
 - [x] modules/linux/writable_passwd.py
-- [x] modules/linux/writable_cron.py
+- [x] modules/linux/writable_cron.py  — skips "Contents of" headers to prevent false positives
 - [x] modules/linux/path_hijack.py
 - [x] modules/linux/groups.py
 - [x] modules/linux/pythonpath.py
-- [x] modules/linux/ld_preload.py
+- [x] modules/linux/ld_preload.py     — TRY FIRST is gcc one-liner; files renamed to shell.c/shell.so
 - [x] modules/linux/nfs.py
 - [x] modules/linux/systemd_service.py
 - [x] modules/linux/logrotate.py
 - [x] modules/linux/mysql_udf.py
 - [x] modules/linux/docker_sock.py
-- [x] modules/linux/credentials.py
-- [x] output/terminal.py
-- [x] readpeas.py (CLI)
+- [x] modules/linux/credentials.py    — reuse hint comment lines appended to commands
+- [x] modules/linux/wildcard_injection.py  — tar * in cron scripts → HIGH; checkpoint exploit
+- [x] output/terminal.py              — --ip/--port LHOST/LPORT substitution; suid note rendering
+- [x] readpeas.py (CLI)               — --ip, --port flags; -o markdown export

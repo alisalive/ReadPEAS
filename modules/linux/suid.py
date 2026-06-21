@@ -95,6 +95,20 @@ def _replace_binary(commands: List[str], matched_as: str, full_path: str) -> Lis
 
 
 _NON_STANDARD_PREFIXES = ("/nfs_share/", "/opt/", "/home/", "/tmp/", "/var/", "/srv/")
+_STANDARD_PREFIXES = ("/usr/bin/", "/bin/", "/usr/sbin/", "/sbin/")
+
+# Binaries that are well-known system SUID utilities — not interesting for privesc research.
+_KNOWN_SAFE = {
+    "su", "sudo", "passwd", "mount", "umount", "ping", "chsh",
+    "gpasswd", "newgrp", "newuidmap", "newgidmap", "pkexec",
+    "crontab", "at", "wall", "write", "ssh-agent", "staprun",
+    "traceroute6", "Xorg", "arping", "clockdiff",
+}
+
+_UNKNOWN_SUID_NOTE = (
+    "Unknown SUID binary — investigate manually, "
+    "may call system commands without full path (PATH hijack risk)"
+)
 
 
 def analyze(section_text: str) -> List[Dict]:
@@ -102,9 +116,10 @@ def analyze(section_text: str) -> List[Dict]:
 
     Each finding has keys: binary, full_path, severity, type, commands.
     When a normalized candidate matched, matched_as is also included.
-    Severity is CRITICAL when GTFOBins commands exist OR the path is
-    non-standard; non-standard binaries always get fallback commands prepended.
-    Otherwise INFO.
+    Severity rules:
+      CRITICAL — GTFOBins commands found, OR binary in a non-standard path.
+      HIGH     — binary in a standard path, not in GTFOBins, not in _KNOWN_SAFE.
+      INFO     — all others (well-known safe binaries with no GTFOBins entry).
     """
     findings: List[Dict] = []
 
@@ -120,19 +135,34 @@ def analyze(section_text: str) -> List[Dict]:
                 commands = _replace_binary(cmds, candidate, full_path)
                 break
 
+        binary_name  = os.path.basename(full_path)
         non_standard = any(full_path.startswith(p) for p in _NON_STANDARD_PREFIXES)
+        in_standard  = any(full_path.startswith(p) for p in _STANDARD_PREFIXES)
+        is_known_safe = binary_name in _KNOWN_SAFE
 
+        note: Optional[str] = None
         fallback = [f"{full_path} -p", full_path]
+
         if non_standard:
             # Any SUID binary in a non-standard path is always CRITICAL.
-            # Prepend direct-path fallback so TRY FIRST is the simple command.
             commands = fallback + commands
             severity = "CRITICAL"
+        elif commands:
+            severity = "CRITICAL"
+        elif in_standard and not is_known_safe:
+            # Unknown binary in a standard path — flag for manual investigation.
+            severity = "HIGH"
+            note = _UNKNOWN_SUID_NOTE
+            commands = [
+                f"# {_UNKNOWN_SUID_NOTE}",
+                f"strings {full_path}  # look for relative command calls without full path",
+                f"ltrace {full_path} 2>/dev/null | head -20  # trace library/system calls",
+            ]
         else:
-            severity = "CRITICAL" if commands else "INFO"
+            severity = "INFO"
 
         finding: Dict = {
-            "binary": os.path.basename(full_path),
+            "binary": binary_name,
             "full_path": full_path,
             "severity": severity,
             "type": "suid",
@@ -142,6 +172,8 @@ def analyze(section_text: str) -> List[Dict]:
             finding["matched_as"] = matched_as
         if non_standard:
             finding["non_standard"] = True
+        if note is not None:
+            finding["note"] = note
 
         findings.append(finding)
 

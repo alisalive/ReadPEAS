@@ -29,6 +29,10 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
 */1 * * * * root /home/milesdyson/backups/backup.sh
 
+Contents of /home/milesdyson/backups/backup.sh:
+#!/bin/bash
+cd /var/www/html && tar cf /home/milesdyson/backups/backup.tgz *
+
 ╔══════════╣ Interesting writable files owned by me or writable by everyone
 ╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation\#writable-files
 /var/www/html

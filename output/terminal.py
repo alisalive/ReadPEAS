@@ -1,6 +1,6 @@
 """Print ReadPEAS findings to the terminal with ANSI colors."""
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 # ── ANSI color constants ───────────────────────────────────────────────────────
 RESET  = "\x1b[0m"
@@ -16,6 +16,13 @@ _DIVIDER = DIM + "-" * 60 + RESET
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _inject_ip_port(cmd: str, ip: Optional[str], port: int) -> str:
+    """Replace LHOST and LPORT placeholders in a command string."""
+    if not ip:
+        return cmd
+    return cmd.replace("LHOST", ip).replace("LPORT", str(port))
+
 
 def severity_color(severity: str) -> str:
     """Return the ANSI color+style prefix for a given severity string."""
@@ -51,7 +58,7 @@ def print_summary(result: Dict) -> None:
     print()
 
 
-def print_finding(finding: Dict) -> None:
+def print_finding(finding: Dict, ip: Optional[str] = None, port: int = 4444) -> None:
     """Print a single finding with severity, type, target, and commands."""
     severity = finding.get("severity", "INFO")
     ftype    = finding.get("type", "")
@@ -103,6 +110,12 @@ def print_finding(finding: Dict) -> None:
         password = finding.get("password", "")
         context  = finding.get("context", "")
         header = f"[{severity}] {ftype} -> {password!r}  ({context})"
+    elif ftype == "wildcard_injection":
+        script      = finding.get("script", "")
+        working_dir = finding.get("working_dir", "")
+        header = f"[{severity}] {ftype} -> {script} (tar wildcard in cron)"
+        if working_dir:
+            header += f"  [workdir: {working_dir}]"
     else:
         # sudo / suid / capabilities
         binary    = finding.get("binary", "")
@@ -116,18 +129,29 @@ def print_finding(finding: Dict) -> None:
 
     print(color + header + RESET)
 
+    # Show investigation note for unknown SUID binaries
+    if ftype == "suid" and finding.get("note"):
+        print(DIM + f"  Note: {finding['note']}" + RESET)
+
     if commands:
+        # Apply LHOST/LPORT substitution at render time
+        rendered = [_inject_ip_port(c, ip, port) for c in commands]
         print(DIM + "TRY FIRST:" + RESET)
-        print("  " + BOLD + "$ " + RESET + commands[0])
-        if len(commands) > 1:
-            print(DIM + f"Other options ({len(commands) - 1} more):" + RESET)
-            for cmd in commands[1:]:
+        print("  " + BOLD + "$ " + RESET + rendered[0])
+        if len(rendered) > 1:
+            print(DIM + f"Other options ({len(rendered) - 1} more):" + RESET)
+            for cmd in rendered[1:]:
                 print("  " + BOLD + "$ " + RESET + cmd)
     else:
         print(DIM + "No exploit commands found." + RESET)
 
 
-def print_results(result: Dict, only_severity: Optional[str] = None) -> None:
+def print_results(
+    result: Dict,
+    only_severity: Optional[str] = None,
+    ip: Optional[str] = None,
+    port: int = 4444,
+) -> None:
     """Print banner, summary, and all findings; filter by severity if specified."""
     print_banner()
     print_summary(result)
@@ -139,7 +163,7 @@ def print_results(result: Dict, only_severity: Optional[str] = None) -> None:
     for i, finding in enumerate(findings):
         if i > 0:
             print(_DIVIDER)
-        print_finding(finding)
+        print_finding(finding, ip=ip, port=port)
 
     if not findings:
         print(DIM + "No findings to display." + RESET)

@@ -36,11 +36,19 @@ def detect_os(text: str) -> str:
 
 # ── Section splitting ─────────────────────────────────────────────────────────
 # LinPEAS section headers look like (after ANSI stripping):
-#   ╔══════════╣ Section Name
-#   ══╣ Section Name
-# Unicode codepoints:  ╔ = U+2554  ═ = U+2550  ╣ = U+2563
+#   ╔══════════╣ Section Name    (main sections)
+#   ══╣ Section Name             (alternative form)
+# Sub-section markers (╚══════════╣ …) are treated as content continuations —
+# the sub-header line is stripped but content below it is preserved.
+# Unicode codepoints:  ╔ = U+2554  ╚ = U+255A  ═ = U+2550  ╣ = U+2563
 _SECTION_RE = re.compile(
     r"^[╔]?[═]+╣[ \t]*(.+?)[ \t]*$",
+    re.MULTILINE,
+)
+
+# Matches ╚══════════╣ … sub-section header lines (NOT start-of-section markers)
+_SUB_SECTION_RE = re.compile(
+    r"^╚[═]+╣[ \t]*.+$\n?",
     re.MULTILINE,
 )
 
@@ -49,8 +57,9 @@ def split_sections(text: str) -> Dict[str, str]:
     """Split LinPEAS output into {section_name: content} pairs.
 
     Both full headers (╔═══╣ …) and sub-headers (══╣ …) are treated as
-    section boundaries.  Content between consecutive headers is assigned
-    to the preceding header.
+    section boundaries.  Sub-section markers (╚═══╣ …) are treated as
+    content continuations — their header line is stripped but all content
+    below them is preserved within the current section.
     """
     sections: Dict[str, str] = {}
     matches = list(_SECTION_RE.finditer(text))
@@ -62,7 +71,9 @@ def split_sections(text: str) -> Dict[str, str]:
         name = match.group(1).strip()
         content_start = match.end()
         content_end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
-        content = text[content_start:content_end].strip()
+        content = text[content_start:content_end]
+        # Strip ╚══════════╣ sub-section header lines while keeping their content.
+        content = _SUB_SECTION_RE.sub("", content).strip()
         # When multiple headers share the same name, append rather than overwrite.
         if name in sections:
             sections[name] = sections[name] + "\n" + content
