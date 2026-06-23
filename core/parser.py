@@ -65,29 +65,40 @@ _SUB_SECTION_RE = re.compile(
 def split_sections(text: str) -> Dict[str, str]:
     """Split LinPEAS output into {section_name: content} pairs.
 
-    Both narrow sub-section headers (╔══════════╣ Name) and wide chapter
-    headers (╔═════════════╣ Name ╠═════════════╗) are treated as section
-    boundaries.  For wide headers the trailing ╠═══╗ is stripped from the
-    captured name.  Reference-link lines (╚ https://…) are kept as content.
+    ANSI escape codes are stripped per-line before matching section boundaries,
+    so this function works correctly with both raw LinPEAS output and
+    pre-stripped text.  Both narrow sub-section headers (╔══════════╣ Name)
+    and wide chapter headers (╔═════════════╣ Name ╠═════════════╗) are
+    treated as section boundaries.  Reference-link lines (╚ https://…) are
+    kept as content.
     """
     sections: Dict[str, str] = {}
-    matches = list(_SECTION_RE.finditer(text))
+    current_name = None
+    current_lines = []  # type: list
 
-    if not matches:
-        return sections
+    for raw_line in text.splitlines(keepends=True):
+        clean_line = strip_ansi(raw_line)
+        m = _SECTION_RE.match(clean_line)
+        if m:
+            # Flush the previous section before starting a new one.
+            if current_name is not None:
+                content = _SUB_SECTION_RE.sub("", "".join(current_lines)).strip()
+                if current_name in sections:
+                    sections[current_name] = sections[current_name] + "\n" + content
+                else:
+                    sections[current_name] = content
+            current_name = m.group(1).strip()
+            current_lines = []
+        elif current_name is not None:
+            current_lines.append(clean_line)
 
-    for i, match in enumerate(matches):
-        name = match.group(1).strip()
-        content_start = match.end()
-        content_end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
-        content = text[content_start:content_end]
-        # Strip ╚══════════╣ sub-section header lines while keeping their content.
-        content = _SUB_SECTION_RE.sub("", content).strip()
-        # When multiple headers share the same name, append rather than overwrite.
-        if name in sections:
-            sections[name] = sections[name] + "\n" + content
+    # Flush the final section.
+    if current_name is not None:
+        content = _SUB_SECTION_RE.sub("", "".join(current_lines)).strip()
+        if current_name in sections:
+            sections[current_name] = sections[current_name] + "\n" + content
         else:
-            sections[name] = content
+            sections[current_name] = content
 
     return sections
 
@@ -106,7 +117,7 @@ def parse(text: str) -> Dict:
     clean = strip_ansi(text)
     return {
         "os": detect_os(clean),
-        "sections": split_sections(clean),
+        "sections": split_sections(text),  # strips ANSI per-line internally
     }
 
 

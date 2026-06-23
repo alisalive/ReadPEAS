@@ -139,7 +139,12 @@
       "Bash(cd C:/Users/User/ReadPEAS && python -c \"\nimport sys, io\nsys.stdout = io.TextIOWrapper\\(sys.stdout.buffer, encoding='utf-8'\\)\nfrom core.parser import parse\ntext = open\\('tests/samples/lp_fowsniff.txt', encoding='utf-8', errors='replace'\\).read\\(\\)\nresult = parse\\(text\\)\nfor k, v in result['sections'].items\\(\\):\n    print\\(repr\\(k\\), '->', repr\\(v[:60]\\)\\)\n\" 2>&1)",
       "Bash(cd C:/Users/User/ReadPEAS && python -c \"\nimport sys, io\nsys.stdout = io.TextIOWrapper\\(sys.stdout.buffer, encoding='utf-8'\\)\nfrom core.parser import parse\ntext = open\\('tests/samples/lp_fowsniff.txt', encoding='utf-8', errors='replace'\\).read\\(\\)\nresult = parse\\(text\\)\nprint\\(repr\\(result['sections'].get\\('Capabilities', 'NOT FOUND'\\)\\)\\)\n\" 2>&1)",
       "Bash(cd C:/Users/User/ReadPEAS && python -c \"\nimport sys, io\nsys.stdout = io.TextIOWrapper\\(sys.stdout.buffer, encoding='utf-8'\\)\nfrom modules.linux.capabilities import analyze\ntext = 'https://book.hacktricks.xyz/linux-hardening/privilege-escalation#capabilities\\\\n/usr/bin/systemd-detect-virt cap_dac_override,cap_sys_ptrace+ep'\nresult = analyze\\(text\\)\nprint\\('findings:', len\\(result\\)\\)\nfor f in result:\n    print\\(f\\)\n\" 2>&1)",
-      "Bash(cd C:/Users/User/ReadPEAS && python -m pytest tests/ -q 2>&1 | tail -5 && echo \"---\" && python readpeas.py -f tests/samples/lp_fowsniff.txt --ip 192.168.158.220 --port 4444 2>&1 | grep -E \"^\\\\[|\\\\[CRITICAL|\\\\[HIGH|\\\\[MEDIUM|\\\\[LOW\" | cat)"
+      "Bash(cd C:/Users/User/ReadPEAS && python -m pytest tests/ -q 2>&1 | tail -5 && echo \"---\" && python readpeas.py -f tests/samples/lp_fowsniff.txt --ip 192.168.158.220 --port 4444 2>&1 | grep -E \"^\\\\[|\\\\[CRITICAL|\\\\[HIGH|\\\\[MEDIUM|\\\\[LOW\" | cat)",
+      "Bash(python -c \"\nfrom core.parser import split_sections\ntext = open\\('tests/samples/lp_fowsniff.txt', encoding='utf-8', errors='replace'\\).read\\(\\)\nsections = split_sections\\(text\\)\nprint\\(f'Sections found: {len\\(sections\\)}'\\)\nfor k in sections:\n    print\\(repr\\(k\\)\\)\n\")",
+      "Bash(python -m pytest tests/ -q 2>&1 | tail -5)",
+      "Bash(python readpeas.py -f tests/samples/lp_fowsniff.txt --ip 192.168.158.220 --port 4444)",
+      "Bash(ls C:/Users/User/ReadPEAS/*.txt)",
+      "Read(//c/Users/User/**)"
     ]
   }
 }
