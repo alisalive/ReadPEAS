@@ -9,8 +9,9 @@ import re
 from typing import Dict, List, Set, Tuple
 
 # Matches timestamp lines from "Executable files potentially added by user":
-#   2018-03-11+23:25:44 /opt/cube/cube.sh
-_TIMESTAMP_PATH_RE = re.compile(r"^\d{4}-\d{2}-\d{2}[+T]\d{2}:\d{2}:\d{2}\s+(/\S+)")
+#   2018-03-11+23:25:44 /opt/cube/cube.sh              (synthetic)
+#   2018-03-11+23:25:44.6493940440 /opt/cube/cube.sh   (real LinPEAS)
+_TIMESTAMP_PATH_RE = re.compile(r"^\d{4}-\d{2}-\d{2}[+T]\d{2}:\d{2}:\d{2}(?:\.\d+)?\s+(/\S+)")
 
 # Matches ls -l lines: -rwxrwxr-x 1 root sysadmin ... /path/script.sh
 _LS_L_RE = re.compile(r"^([-dl][rwxsStT-]{9})\s+\d+\s+\S+\s+\S+\s+\d+\s+\S.+\s+(/\S+)$")
@@ -25,6 +26,11 @@ _EXCLUDED_PREFIXES: Tuple[str, ...] = (
     "/usr/bin/", "/usr/sbin/", "/bin/", "/sbin/",
 )
 
+# Non-system directories where a group-writable script is a strong privesc signal alone
+_STRONG_SIGNAL_PREFIXES: Tuple[str, ...] = (
+    "/opt/", "/srv/", "/usr/local/",
+)
+
 
 def _is_excluded(path: str) -> bool:
     """Return True if the path should be ignored."""
@@ -37,11 +43,18 @@ def _is_writable_perm(perm: str) -> bool:
     return len(perm) >= 10 and (perm[5] == "w" or perm[8] == "w")
 
 
-def parse_writable_exec_section(section_text: str) -> List[str]:
-    """Return paths found in both the group-writable listing and the executable-files section.
+def _is_strong_signal_dir(path: str) -> bool:
+    """Return True if the path is in a non-system directory where writable scripts are suspicious."""
+    return any(path.startswith(p) for p in _STRONG_SIGNAL_PREFIXES)
 
-    The cross-reference confirms the script is executable on the system,
-    increasing confidence that it is called by a privileged process.
+
+def parse_writable_exec_section(section_text: str) -> List[Tuple[str, str]]:
+    """Return (path, confidence) tuples for group-writable scripts in system directories.
+
+    confidence is "HIGH" if:
+      - path is in both group-writable AND executable-user-files (cross-referenced), OR
+      - path is group-writable AND under /opt/, /srv/, /usr/local/ (strong signal alone)
+    confidence is "MEDIUM" if only in group-writable in other directories.
     """
     writable_scripts: Set[str] = set()   # From group writable section
     exec_user_paths: Set[str] = set()    # From executable files section
@@ -80,8 +93,13 @@ def parse_writable_exec_section(section_text: str) -> List[str]:
             if not _is_excluded(path):
                 writable_scripts.add(path)
 
-    # Only return paths confirmed in BOTH collections
-    return sorted(writable_scripts & exec_user_paths)
+    results: List[Tuple[str, str]] = []
+    for path in sorted(writable_scripts):
+        if path in exec_user_paths or _is_strong_signal_dir(path):
+            results.append((path, "HIGH"))
+        else:
+            results.append((path, "MEDIUM"))
+    return results
 
 
 def generate_commands(script_path: str) -> List[str]:
@@ -96,16 +114,12 @@ def generate_commands(script_path: str) -> List[str]:
 
 
 def analyze(section_text: str) -> List[Dict]:
-    """Analyze LinPEAS output for group-writable executable scripts in system directories.
-
-    Returns HIGH findings for scripts that appear in both the group-writable
-    listing and the executable-user-files section (cross-reference heuristic).
-    """
+    """Analyze LinPEAS output for group-writable executable scripts in system directories."""
     findings: List[Dict] = []
-    for path in parse_writable_exec_section(section_text):
+    for path, confidence in parse_writable_exec_section(section_text):
         findings.append({
             "script_path": path,
-            "severity": "HIGH",
+            "severity": confidence,
             "type": "writable_exec_script",
             "description": "Group-writable executable script in system directory — may be called by root",
             "commands": generate_commands(path),
@@ -122,12 +136,12 @@ Group users:
 /opt/cube/cube.sh
 
 ╔══════════╣ Executable files potentially added by user (limit 70)
-2018-03-11+23:25:44 /opt/cube/cube.sh
-2018-03-11+20:27:48 /etc/update-motd.d/00-header
+2018-03-11+23:25:44.6493940440 /opt/cube/cube.sh
+2018-03-11+20:27:48.0303333080 /etc/update-motd.d/00-header
 """
     print("=== parse_writable_exec_section ===")
-    for p in parse_writable_exec_section(SAMPLE):
-        print(" ", p)
+    for path, confidence in parse_writable_exec_section(SAMPLE):
+        print(f"  [{confidence}] {path}")
 
     print("\n=== analyze ===")
     for f in analyze(SAMPLE):

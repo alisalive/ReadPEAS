@@ -121,6 +121,16 @@ def extract(raw_text: str) -> Dict:
             )
         ]
 
+    # Suppress writable_exec_script if writable_cron already covers the same path.
+    if writable_cron_scripts:
+        findings = [
+            f for f in findings
+            if not (
+                f.get("type") == "writable_exec_script"
+                and f.get("script_path") in writable_cron_scripts
+            )
+        ]
+
     findings.sort(key=lambda f: _SEVERITY_ORDER.get(f.get("severity", "INFO"), 4))
 
     return {

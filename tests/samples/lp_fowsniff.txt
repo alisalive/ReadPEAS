@@ -32,8 +32,8 @@ Group users:
 /opt/cube/cube.sh
 
 ╔══════════╣ Executable files potentially added by user (limit 70)
-2018-03-11+23:25:44 /opt/cube/cube.sh
-2018-03-11+20:27:48 /etc/update-motd.d/00-header
+2018-03-11+23:25:44.6493940440 /opt/cube/cube.sh
+2018-03-11+20:27:48.0303333080 /etc/update-motd.d/00-header
 
 ╔══════════╣ Analyzing SSH Files (limit 70)
 ╚ https://book.hacktricks.xyz/network-services-pentesting/pentesting-ssh

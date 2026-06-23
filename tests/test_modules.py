@@ -1112,11 +1112,19 @@ class TestWritableExecScript:
         assert f["severity"] == "HIGH"
         assert f["script_path"] == "/opt/cube/cube.sh"
 
-    def test_script_only_in_writable_section_not_returned(self):
-        # Path in group-writable but not in executable-files → no cross-reference
+    def test_strong_signal_dir_detected_without_exec_section(self):
+        # /opt/ is a strong-signal dir → HIGH even without executable-files cross-reference
         text = "/opt/cube/cube.sh\n"
         findings = writable_exec_analyze(text)
-        assert findings == []
+        assert len(findings) == 1
+        assert findings[0]["severity"] == "HIGH"
+
+    def test_non_strong_dir_only_writable_not_returned(self):
+        # Path in group-writable but NOT in strong-signal dir and no exec cross-ref → MEDIUM
+        text = "/var/lib/app/run.sh\n"
+        findings = writable_exec_analyze(text)
+        assert len(findings) == 1
+        assert findings[0]["severity"] == "MEDIUM"
 
     def test_script_only_in_exec_section_not_returned(self):
         # Path in executable-files but not in group-writable → no cross-reference
@@ -1150,6 +1158,17 @@ class TestWritableExecScript:
         cmds = findings[0]["commands"]
         assert any("grep" in c for c in cmds)
         assert any("LHOST" in c for c in cmds)
+
+    def test_nanosecond_timestamp_format(self):
+        # Real LinPEAS uses fractional seconds: 2018-03-11+23:25:44.6493940440
+        text = (
+            "/opt/cube/cube.sh\n"
+            "2018-03-11+23:25:44.6493940440 /opt/cube/cube.sh\n"
+        )
+        findings = writable_exec_analyze(text)
+        assert len(findings) == 1
+        assert findings[0]["severity"] == "HIGH"
+        assert findings[0]["script_path"] == "/opt/cube/cube.sh"
 
     def test_ls_l_writable_line_detected(self):
         text = (
