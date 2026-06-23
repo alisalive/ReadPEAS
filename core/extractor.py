@@ -31,33 +31,37 @@ from modules.linux.writable_cron_d import analyze as analyze_writable_cron_d
 from modules.linux.writable_exec_script import analyze as analyze_writable_exec
 
 # Maps each analyzer to the LinPEAS section name keywords it handles.
+# Keywords are matched case-insensitively as substrings of the section name.
+# Multiple modules may receive the same section; each filters internally.
+# Keywords cover both manually-crafted test samples AND real LinPEAS output
+# (which may use wider chapter names or slightly different sub-section labels).
 SECTION_MAP = [
     (analyze_sudo,            ["sudo", "sudoers"]),
     (analyze_suid,            ["suid"]),
     (analyze_capabilities,    ["capabilities", "getcap"]),
     (analyze_cron,            ["cron", "cronjob", "crontab"]),
-    (analyze_writable,        ["writable", "interesting files", "file permissions"]),
+    (analyze_writable,        ["writable", "interesting files", "file permissions", "passwd"]),
     (analyze_writable_cron,   ["cron", "cronjob", "crontab", "writable", "interesting files"]),
     (analyze_path,            ["path", "environment"]),
-    (analyze_groups,          ["groups", "current user", "uid="]),
-    (analyze_pythonpath,      ["sudo", "sudoers"]),
-    (analyze_ld_preload,      ["sudo", "sudoers"]),
+    (analyze_groups,          ["groups", "current user", "uid=", "group", "my user"]),
+    (analyze_pythonpath,      ["sudo", "sudoers", "python"]),
+    (analyze_ld_preload,      ["sudo", "sudoers", "ld.so", "preload"]),
     (analyze_nfs,             ["nfs", "exports", "no_root_squash", "mount"]),
-    (analyze_systemd,         ["init", "systemd", "rc.d", "interesting files", "writable"]),
-    (analyze_logrotate,       ["logrotten", "writable log"]),
-    (analyze_mysql_udf,       ["processes", "mysql", "software", "interesting processes"]),
-    (analyze_docker_sock,     ["unix sockets", "sockets", "interesting files", "writable"]),
-    (analyze_credentials,     ["password", "credential", "backup", "wordpress", "http conf", "analyzing", "history"]),
+    (analyze_systemd,         ["init", "systemd", "rc.d", "interesting files", "writable", "timer"]),
+    (analyze_logrotate,       ["logrotten", "writable log", "logrotate"]),
+    (analyze_mysql_udf,       ["processes", "mysql", "software", "interesting processes", "sql"]),
+    (analyze_docker_sock,     ["unix sockets", "sockets", "interesting files", "writable", "docker", "container"]),
+    (analyze_credentials,     ["password", "credential", "backup", "wordpress", "http conf", "analyzing", "history", "interesting file", "ssh"]),
     (analyze_wildcard,        ["cron", "cronjob", "crontab"]),
-    (analyze_motd_writable,   ["group writable", "interesting writable", "update-motd"]),
-    (analyze_lxd_group,       ["groups", "current user", "interesting groups"]),
-    (analyze_docker_group,    ["groups", "current user", "interesting groups"]),
-    (analyze_tmux_socket,     ["processes", "running processes", "interesting processes", "interesting writable", "writable"]),
-    (analyze_service_binary,  ["analyzing .service", "service file", "systemd"]),
-    (analyze_ssh_keys,        ["private ssh", "ssh key", "analyzing ssh"]),
+    (analyze_motd_writable,   ["group writable", "interesting writable", "update-motd", "writable", "group"]),
+    (analyze_lxd_group,       ["groups", "current user", "interesting groups", "group", "my user"]),
+    (analyze_docker_group,    ["groups", "current user", "interesting groups", "group", "my user"]),
+    (analyze_tmux_socket,     ["processes", "running processes", "interesting processes", "interesting writable", "writable", "process"]),
+    (analyze_service_binary,  ["analyzing .service", "service file", "systemd", "service"]),
+    (analyze_ssh_keys,        ["private ssh", "ssh key", "analyzing ssh", "ssh", "key"]),
     (analyze_screen_exploit,  ["suid"]),
     (analyze_writable_cron_d, ["writable", "cron", "interesting files"]),
-    (analyze_writable_exec,   ["group writable", "executable files", "added by user"]),
+    (analyze_writable_exec,   ["group writable", "executable files", "added by user", "writable", "executable", "group"]),
 ]
 
 _SEVERITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}

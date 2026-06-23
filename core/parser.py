@@ -35,14 +35,23 @@ def detect_os(text: str) -> str:
 
 
 # ── Section splitting ─────────────────────────────────────────────────────────
-# LinPEAS section headers look like (after ANSI stripping):
-#   ╔══════════╣ Section Name    (main sections)
-#   ══╣ Section Name             (alternative form)
-# Sub-section markers (╚══════════╣ …) are treated as content continuations —
-# the sub-header line is stripped but content below it is preserved.
-# Unicode codepoints:  ╔ = U+2554  ╚ = U+255A  ═ = U+2550  ╣ = U+2563
+# LinPEAS uses two header formats (after ANSI stripping):
+#
+#   Narrow sub-section (most common in practice):
+#     ╔══════════╣ Section Name
+#
+#   Wide chapter header (wraps sub-sections in full LinPEAS runs):
+#     ╔═══════════════════╣ Chapter Name ╠═══════════════════╗
+#
+# Both are treated as section boundaries.  For wide headers the trailing
+# ╠═══…═══╗ is stripped so the captured name is clean.
+#
+# Sub-section reference-link lines (╚ https://…) are plain content — they
+# do NOT start with ╚[═]+╣, so they are never treated as boundaries.
+#
+# Unicode codepoints:  ╔ = U+2554  ╚ = U+255A  ═ = U+2550  ╣ = U+2563  ╠ = U+2560
 _SECTION_RE = re.compile(
-    r"^[╔]?[═]+╣[ \t]*(.+?)[ \t]*$",
+    r"^[╔]?[═]+╣[ \t]*(.+?)[ \t]*(?=[ \t]*╠|$)",
     re.MULTILINE,
 )
 
@@ -56,10 +65,10 @@ _SUB_SECTION_RE = re.compile(
 def split_sections(text: str) -> Dict[str, str]:
     """Split LinPEAS output into {section_name: content} pairs.
 
-    Both full headers (╔═══╣ …) and sub-headers (══╣ …) are treated as
-    section boundaries.  Sub-section markers (╚═══╣ …) are treated as
-    content continuations — their header line is stripped but all content
-    below them is preserved within the current section.
+    Both narrow sub-section headers (╔══════════╣ Name) and wide chapter
+    headers (╔═════════════╣ Name ╠═════════════╗) are treated as section
+    boundaries.  For wide headers the trailing ╠═══╗ is stripped from the
+    captured name.  Reference-link lines (╚ https://…) are kept as content.
     """
     sections: Dict[str, str] = {}
     matches = list(_SECTION_RE.finditer(text))

@@ -3,6 +3,7 @@ Linux Privilege Escalation - LinPEAS
 
 ╔══════════╣ SUID - Check easy privesc, exploits and write perms
 ╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#sudo-and-suid
+-rwsr-xr-x 1 root root   166056 Jan 19 2024 /usr/bin/find
 -rwxr-sr-x 1 root shadow  35936 Mar  8 2021 /usr/bin/unix_chkpwd
 -rwxr-sr-x 1 root shadow  22696 Sep 22 2022 /usr/bin/dotlockfile
 -rwxr-sr-x 1 root tty     19248 Sep 22 2022 /usr/bin/wall
@@ -11,6 +12,10 @@ Linux Privilege Escalation - LinPEAS
 -rwxr-sr-x 1 root mail    14632 Dec  7 2013 /usr/bin/dotlockfile
 -rwxr-sr-x 1 root postdrop 14424 Jan 28 2021 /usr/sbin/postdrop
 -rwxr-sr-x 1 root postdrop 22600 Jan 28 2021 /usr/sbin/postqueue
+
+╔══════════╣ Capabilities
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#capabilities
+/usr/bin/systemd-detect-virt = cap_dac_override,cap_sys_ptrace+ep
 
 ╔══════════╣ Checking 'sudo -l', /etc/sudoers, and /etc/sudoers.d
 ╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#sudo-and-suid
