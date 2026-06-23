@@ -144,7 +144,10 @@
       "Bash(python -m pytest tests/ -q 2>&1 | tail -5)",
       "Bash(python readpeas.py -f tests/samples/lp_fowsniff.txt --ip 192.168.158.220 --port 4444)",
       "Bash(ls C:/Users/User/ReadPEAS/*.txt)",
-      "Read(//c/Users/User/**)"
+      "Read(//c/Users/User/**)",
+      "Bash(python -c \"\nfrom core.extractor import extract\n\nraw = open\\('tests/samples/vulnbox.txt', encoding='utf-8'\\).read\\(\\)\nresult = extract\\(raw\\)\nprint\\('=== vulnbox.txt:', result['total'], 'findings ==='\\)\nfor f in result['findings']:\n    print\\(f'  [{f[\\\\\"severity\\\\\"]}] {f[\\\\\"type\\\\\"]} -> {f.get\\(\\\\\"full_path\\\\\", f.get\\(\\\\\"path\\\\\", f.get\\(\\\\\"binary\\\\\", f.get\\(\\\\\"script\\\\\", \\\\\"?\\\\\"\\)\\)\\)\\)}'\\)\n\")",
+      "Bash(python -m pytest tests/test_regression.py::test_finding_count -x -q 2>&1)",
+      "Bash(python -m pytest tests/ -q 2>&1)"
     ]
   }
 }

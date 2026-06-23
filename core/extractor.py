@@ -33,35 +33,39 @@ from modules.linux.writable_exec_script import analyze as analyze_writable_exec
 # Maps each analyzer to the LinPEAS section name keywords it handles.
 # Keywords are matched case-insensitively as substrings of the section name.
 # Multiple modules may receive the same section; each filters internally.
-# Keywords cover both manually-crafted test samples AND real LinPEAS output
-# (which may use wider chapter names or slightly different sub-section labels).
-SECTION_MAP = [
-    (analyze_sudo,            ["sudo", "sudoers"]),
-    (analyze_suid,            ["suid"]),
-    (analyze_capabilities,    ["capabilities", "getcap"]),
-    (analyze_cron,            ["cron", "cronjob", "crontab"]),
-    (analyze_writable,        ["writable", "interesting files", "file permissions", "passwd"]),
-    (analyze_writable_cron,   ["cron", "cronjob", "crontab", "writable", "interesting files"]),
-    (analyze_path,            ["path", "environment"]),
-    (analyze_groups,          ["groups", "current user", "uid=", "group", "my user"]),
-    (analyze_pythonpath,      ["sudo", "sudoers", "python"]),
-    (analyze_ld_preload,      ["sudo", "sudoers", "ld.so", "preload"]),
-    (analyze_nfs,             ["nfs", "exports", "no_root_squash", "mount"]),
-    (analyze_systemd,         ["init", "systemd", "rc.d", "interesting files", "writable", "timer"]),
-    (analyze_logrotate,       ["logrotten", "writable log", "logrotate"]),
-    (analyze_mysql_udf,       ["processes", "mysql", "software", "interesting processes", "sql"]),
-    (analyze_docker_sock,     ["unix sockets", "sockets", "interesting files", "writable", "docker", "container"]),
-    (analyze_credentials,     ["password", "credential", "backup", "wordpress", "http conf", "analyzing", "history", "interesting file", "ssh"]),
-    (analyze_wildcard,        ["cron", "cronjob", "crontab"]),
-    (analyze_motd_writable,   ["group writable", "interesting writable", "update-motd", "writable", "group"]),
-    (analyze_lxd_group,       ["groups", "current user", "interesting groups", "group", "my user"]),
-    (analyze_docker_group,    ["groups", "current user", "interesting groups", "group", "my user"]),
-    (analyze_tmux_socket,     ["processes", "running processes", "interesting processes", "interesting writable", "writable", "process"]),
-    (analyze_service_binary,  ["analyzing .service", "service file", "systemd", "service"]),
-    (analyze_ssh_keys,        ["private ssh", "ssh key", "analyzing ssh", "ssh", "key"]),
-    (analyze_screen_exploit,  ["suid"]),
-    (analyze_writable_cron_d, ["writable", "cron", "interesting files"]),
-    (analyze_writable_exec,   ["group writable", "executable files", "added by user", "writable", "executable", "group"]),
+# Keywords are chosen to match both real LinPEAS section names (long, descriptive)
+# and manually-crafted test samples (short, targeted).
+MODULE_SECTIONS = [
+    (analyze_sudo,          ["sudo"]),
+    (analyze_suid,          ["suid"]),
+    (analyze_capabilities,  ["capabilit"]),
+    (analyze_cron,          ["cron", "timer"]),
+    (analyze_writable_cron, ["cron", "writable"]),
+    (analyze_writable,      ["passwd", "writable", "interesting files", "file permissions"]),
+    (analyze_path,          ["path", "environment"]),
+    (analyze_groups,        ["my user", "all users", "group"]),
+    (analyze_pythonpath,    ["python", "path", "environment", "sudo"]),
+    (analyze_ld_preload,    ["ld.so", "preload", "misconfig", "sudo"]),
+    (analyze_nfs,           ["nfs", "mount", "file-system", "exports", "no_root_squash"]),
+    (analyze_systemd,       ["systemd path", "init", "rc.d", "writable", "timer"]),
+    (analyze_logrotate,     ["logrotate", "logrotten", "writable log"]),
+    (analyze_mysql_udf,     ["mysql", "sql", "database", "processes", "interesting processes"]),
+    (analyze_docker_sock,   ["docker", "container", "socket", "unix socket"]),
+    (analyze_credentials,   [
+        "password", "credential", "interesting files", "interesting file",
+        "ssh files", "analyzing ssh", "searching ssl", "db/.sql",
+        "history", "backup", "wordpress", "http conf", "analyzing",
+    ]),
+    (analyze_wildcard,      ["cron", "writable"]),
+    (analyze_motd_writable, ["group writable", "interesting writable", "update-motd", "writable", "motd"]),
+    (analyze_lxd_group,     ["my user", "all users", "interesting groups", "group"]),
+    (analyze_docker_group,  ["my user", "all users", "interesting groups", "group"]),
+    (analyze_tmux_socket,   ["process", "running process", "tmux", "interesting writable", "writable"]),
+    (analyze_service_binary,["analyzing .service", "service file", "writable path", "systemd"]),
+    (analyze_ssh_keys,      ["ssh", "key", "certificate", "ssl", "private"]),
+    (analyze_screen_exploit,["suid"]),
+    (analyze_writable_cron_d, ["cron", "writable", "interesting files"]),
+    (analyze_writable_exec, ["group writable", "executable", "writable", "interesting writable", "added by user"]),
 ]
 
 _SEVERITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}
@@ -83,7 +87,7 @@ def extract(raw_text: str) -> Dict:
 
     findings: List[Dict] = []
 
-    for analyzer, keywords in SECTION_MAP:
+    for analyzer, keywords in MODULE_SECTIONS:
         # Collect all sections whose name contains any keyword, then analyze combined.
         matched_chunks = [
             content for section_name, content in sections.items()
