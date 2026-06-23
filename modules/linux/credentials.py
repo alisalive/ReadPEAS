@@ -37,6 +37,16 @@ _PLACEHOLDER_VALUES = {
     "default", "empty", "blank", "notset", "n/a", "na",
 }
 
+# Additional tokens that appear in package manager output — never real credentials
+_CREDENTIAL_BLACKLIST = {
+    "amd64", "i386", "arm64", "armhf", "armel", "x86_64",   # CPU architectures
+    "configure", "configured", "install", "installed", "unpacked",
+    "status", "upgrade", "remove", "purge",                   # dpkg actions
+    "half-configured", "half-installed",
+    "error", "warning", "info", "debug",
+    "description", "version", "release", "package",
+}
+
 # Lines to skip entirely (documentation, URLs, shell prompts)
 _SKIP_LINE_RE = re.compile(
     r"^\s*(?:#|//|;|https?://|\$\s+|echo\s+|cat\s+|grep\s+)",
@@ -50,6 +60,8 @@ def _is_placeholder(value: str) -> bool:
     if not stripped or len(stripped) < 3:
         return True
     if stripped in _PLACEHOLDER_VALUES:
+        return True
+    if stripped in _CREDENTIAL_BLACKLIST:
         return True
     # Pure numeric short values (e.g. "0", "1", "42") are not passwords
     if stripped.isdigit() and len(stripped) < 5:
@@ -80,6 +92,10 @@ def parse_credentials_section(section_text: str) -> List[Tuple[str, str]]:
         if not line:
             continue
         if _SKIP_LINE_RE.match(line):
+            continue
+        # Skip lines sourced from package manager logs — never contain real passwords
+        _line_prefix = line.split(":", 1)[0]
+        if _line_prefix.startswith("/var/log/dpkg") or _line_prefix.startswith("/var/log/apt"):
             continue
 
         # Cloud credential file paths (bypass placeholder filter)

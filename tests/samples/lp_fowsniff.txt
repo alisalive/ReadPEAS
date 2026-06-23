@@ -16,3 +16,12 @@ Linux Privilege Escalation - LinPEAS
 ╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#sudo-and-suid
 User sarah may run the following commands on fowsniff:
     (root) NOPASSWD: /usr/bin/vim
+
+╔══════════╣ Interesting GROUP writable files (not in Home)
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#writable-files
+Group users:
+/opt/cube/cube.sh
+
+╔══════════╣ Executable files potentially added by user (limit 70)
+2018-03-11+23:25:44 /opt/cube/cube.sh
+2018-03-11+20:27:48 /etc/update-motd.d/00-header

@@ -135,6 +135,8 @@ def print_finding(finding: Dict, ip: Optional[str] = None, port: int = 4444) -> 
         header = f"[{severity}] {ftype} -> {finding.get('binary_path', '')}  ({finding.get('description', 'EDB-41154')})"
     elif ftype == "writable_cron_d":
         header = f"[{severity}] {ftype} -> {finding.get('cron_path', '')}  ({finding.get('description', 'world-writable cron.d file')})"
+    elif ftype == "writable_exec_script":
+        header = f"[{severity}] {ftype} -> {finding.get('script_path', '')}  ({finding.get('description', 'group-writable exec script')})"
     else:
         # sudo / suid / capabilities
         binary    = finding.get("binary", "")
@@ -150,6 +152,10 @@ def print_finding(finding: Dict, ip: Optional[str] = None, port: int = 4444) -> 
 
     # Show investigation note for unknown SUID binaries
     if ftype == "suid" and finding.get("note"):
+        print(DIM + f"  Note: {finding['note']}" + RESET)
+
+    # Show investigation note for dac capability findings
+    if ftype == "capabilities" and finding.get("note"):
         print(DIM + f"  Note: {finding['note']}" + RESET)
 
     if commands:

@@ -32,12 +32,14 @@ _EXPLOITABLE_CAPS = {
 }
 
 # Caps that are always CRITICAL regardless of GTFOBins coverage.
-# cap_dac_override/cap_dac_read_search allow bypassing file permission checks
-# on any binary, so they are always exploitable.
+# cap_setuid/cap_setgid directly grant uid/gid 0; cap_sys_admin is near-equivalent.
 _ALWAYS_CRITICAL_CAPS = {
     "cap_setuid", "cap_setgid", "cap_sys_admin",
-    "cap_dac_override", "cap_dac_read_search",
 }
+
+# Caps that bypass file permission checks — exploitable but HIGH unless GTFOBins/interpreter
+# provides a direct exploit. Reported with an investigation note.
+_DAC_CAPS = {"cap_dac_override", "cap_dac_read_search"}
 
 # Interpreter binaries that can trivially exploit cap_setuid.
 # Maps normalized binary name → exploit command template (use {path} for full path).
@@ -226,6 +228,18 @@ def analyze(section_text: str) -> List[Dict]:
         }
         if matched_as is not None:
             finding["matched_as"] = matched_as
+
+        # For dac caps without a direct exploit, add an investigation note
+        if severity == "HIGH" and not commands:
+            has_dac = any(
+                part.split("+")[0].split("=")[0].strip().lower() in _DAC_CAPS
+                for part in caps.split(",")
+            )
+            if has_dac:
+                finding["note"] = (
+                    f"{caps} — can bypass file read/write permission checks. "
+                    "Investigate: may allow reading /etc/shadow or overwriting protected files."
+                )
 
         findings.append(finding)
 

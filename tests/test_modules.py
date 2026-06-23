@@ -24,6 +24,7 @@ from modules.linux.service_binary import analyze as service_binary_analyze
 from modules.linux.ssh_keys import analyze as ssh_keys_analyze
 from modules.linux.screen_exploit import analyze as screen_analyze
 from modules.linux.writable_cron_d import analyze as writable_cron_d_analyze
+from modules.linux.writable_exec_script import analyze as writable_exec_analyze
 
 
 # ── sudo.py ───────────────────────────────────────────────────────────────────
@@ -866,18 +867,20 @@ class TestCapabilitiesInterpreter:
         assert len(findings) == 1
         assert any("setuid" in c.lower() for c in findings[0]["commands"])
 
-    def test_cap_dac_read_search_is_critical(self):
+    def test_cap_dac_read_search_non_gtfobins_is_high(self):
+        # cap_dac_read_search on non-interpreter, non-GTFOBins binary → HIGH (not CRITICAL)
         text = "/usr/bin/openssl = cap_dac_read_search+ep\n"
         findings = caps_analyze(text)
         assert len(findings) == 1
-        # cap_dac_read_search is now in _ALWAYS_CRITICAL_CAPS
-        assert findings[0]["severity"] == "CRITICAL"
+        assert findings[0]["severity"] == "HIGH"
 
-    def test_cap_dac_override_is_critical(self):
+    def test_cap_dac_override_non_gtfobins_is_high(self):
+        # cap_dac_override on unknown binary → HIGH with investigation note, not CRITICAL
         text = "/usr/bin/somebin = cap_dac_override+ep\n"
         findings = caps_analyze(text)
         assert len(findings) == 1
-        assert findings[0]["severity"] == "CRITICAL"
+        assert findings[0]["severity"] == "HIGH"
+        assert "note" in findings[0]
 
     def test_cap_setuid_with_net_bind_interpreter(self):
         # cap_setuid,cap_net_bind_service+eip — interpreter still gets specific cmd
@@ -1090,3 +1093,69 @@ class TestWritableCronD:
         findings = writable_cron_d_analyze(text)
         cmds = findings[0]["commands"]
         assert any("LHOST" in c or "root bash" in c for c in cmds)
+
+
+# ── writable_exec_script.py ───────────────────────────────────────────────────
+
+class TestWritableExecScript:
+    def test_cross_referenced_script_is_high(self):
+        text = (
+            "Group users:\n"
+            "/opt/cube/cube.sh\n"
+            "\n"
+            "2018-03-11+23:25:44 /opt/cube/cube.sh\n"
+        )
+        findings = writable_exec_analyze(text)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f["type"] == "writable_exec_script"
+        assert f["severity"] == "HIGH"
+        assert f["script_path"] == "/opt/cube/cube.sh"
+
+    def test_script_only_in_writable_section_not_returned(self):
+        # Path in group-writable but not in executable-files → no cross-reference
+        text = "/opt/cube/cube.sh\n"
+        findings = writable_exec_analyze(text)
+        assert findings == []
+
+    def test_script_only_in_exec_section_not_returned(self):
+        # Path in executable-files but not in group-writable → no cross-reference
+        text = "2018-03-11+23:25:44 /opt/cube/cube.sh\n"
+        findings = writable_exec_analyze(text)
+        assert findings == []
+
+    def test_motd_path_excluded(self):
+        text = (
+            "/etc/update-motd.d/00-header\n"
+            "2018-03-11+20:27:48 /etc/update-motd.d/00-header\n"
+        )
+        findings = writable_exec_analyze(text)
+        assert findings == []
+
+    def test_home_dir_excluded(self):
+        text = (
+            "/home/user/script.sh\n"
+            "2018-03-11+20:27:48 /home/user/script.sh\n"
+        )
+        findings = writable_exec_analyze(text)
+        assert findings == []
+
+    def test_commands_include_grep_and_payload(self):
+        text = (
+            "/opt/cube/cube.sh\n"
+            "2018-03-11+23:25:44 /opt/cube/cube.sh\n"
+        )
+        findings = writable_exec_analyze(text)
+        assert len(findings) == 1
+        cmds = findings[0]["commands"]
+        assert any("grep" in c for c in cmds)
+        assert any("LHOST" in c for c in cmds)
+
+    def test_ls_l_writable_line_detected(self):
+        text = (
+            "-rwxrwxr-x 1 root users 512 Jan 2024 /srv/startup.sh\n"
+            "2018-03-11+12:00:00 /srv/startup.sh\n"
+        )
+        findings = writable_exec_analyze(text)
+        assert len(findings) == 1
+        assert findings[0]["script_path"] == "/srv/startup.sh"

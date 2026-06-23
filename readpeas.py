@@ -74,6 +74,8 @@ def _finding_md_title(f: Dict) -> str:
         return f"{ftype} — {f.get('binary_path', '')} (EDB-41154)"
     elif ftype == "writable_cron_d":
         return f"{ftype} — {f.get('cron_path', '')} (writable cron.d file)"
+    elif ftype == "writable_exec_script":
+        return f"{ftype} — {f.get('script_path', '')} (group-writable executable script)"
     else:
         return f"{ftype} — {f.get('full_path', f.get('file', ''))}"
 

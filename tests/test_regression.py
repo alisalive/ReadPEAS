@@ -37,6 +37,7 @@ _SAMPLES = [
     ("writable_cron_d.txt", 1, True),
     ("interpreter_caps.txt",1, True),
     ("disk_group.txt",      1, True),
+    ("writable_exec_script.txt", 1, False),
 ]
 
 _SAMPLES_DIR = os.path.join(os.path.dirname(__file__), "samples")

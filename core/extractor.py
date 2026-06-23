@@ -28,6 +28,7 @@ from modules.linux.service_binary import analyze as analyze_service_binary
 from modules.linux.ssh_keys import analyze as analyze_ssh_keys
 from modules.linux.screen_exploit import analyze as analyze_screen_exploit
 from modules.linux.writable_cron_d import analyze as analyze_writable_cron_d
+from modules.linux.writable_exec_script import analyze as analyze_writable_exec
 
 # Maps each analyzer to the LinPEAS section name keywords it handles.
 SECTION_MAP = [
@@ -56,6 +57,7 @@ SECTION_MAP = [
     (analyze_ssh_keys,        ["private ssh", "ssh key", "analyzing ssh"]),
     (analyze_screen_exploit,  ["suid"]),
     (analyze_writable_cron_d, ["writable", "cron", "interesting files"]),
+    (analyze_writable_exec,   ["group writable", "executable files", "added by user"]),
 ]
 
 _SEVERITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}

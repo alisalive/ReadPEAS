@@ -124,7 +124,8 @@
       "Bash(python readpeas.py -f tests/samples/motd_writable.txt 2>/dev/null | grep -E \"CRITICAL|motd|update-motd\")",
       "Bash(python readpeas.py -f tests/samples/lxd_group.txt 2>/dev/null | grep -E \"CRITICAL|lxd|lxc\")",
       "Bash(python -m pytest tests/ -v 2>&1 | grep -E \"PASSED|FAILED|ERROR|passed|failed\" | tail -20)",
-      "Bash(python -m pytest tests/ -v 2>&1)"
+      "Bash(python -m pytest tests/ -v 2>&1)",
+      "Bash(python readpeas.py -f tests/samples/lp_fowsniff.txt --ip 192.168.158.220 --port 4444 2>&1)"
     ]
   }
 }
