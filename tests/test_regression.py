@@ -38,6 +38,7 @@ _SAMPLES = [
     ("interpreter_caps.txt",1, True),
     ("disk_group.txt",      1, True),
     ("writable_exec_script.txt", 1, False),
+    ("lp_fowsniff.txt",          5, True),
 ]
 
 _SAMPLES_DIR = os.path.join(os.path.dirname(__file__), "samples")
@@ -82,3 +83,20 @@ def test_findings_sorted_by_severity(filename, expected_total, has_critical):
     assert severities == sorted(severities), (
         f"{filename}: findings are not sorted by severity"
     )
+
+
+def test_lp_fowsniff_real_output():
+    """End-to-end test on expanded Fowsniff sample — guards against known false positives."""
+    raw = _load("lp_fowsniff.txt")
+    result = extract(raw)
+    blob = str(result["findings"])
+    # cube.sh MUST be detected
+    assert "/opt/cube/cube.sh" in blob, "cube.sh privesc missed"
+    # CA certs must NEVER be flagged as ssh keys
+    assert "/etc/ssl/certs/" not in blob, "CA cert false positive in ssh_keys"
+    # SGID-only binaries must NOT appear as SUID findings
+    for sgid in ["unix_chkpwd", "postdrop", "postqueue", "wall",
+                 "dotlockfile", "bsd-write", "mutt_dotlock"]:
+        assert sgid not in blob, f"SGID false positive: {sgid}"
+    # dpkg log token must not be a credential
+    assert "'amd64'" not in blob, "dpkg amd64 false positive"

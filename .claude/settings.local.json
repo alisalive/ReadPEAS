@@ -147,7 +147,9 @@
       "Read(//c/Users/User/**)",
       "Bash(python -c \"\nfrom core.extractor import extract\n\nraw = open\\('tests/samples/vulnbox.txt', encoding='utf-8'\\).read\\(\\)\nresult = extract\\(raw\\)\nprint\\('=== vulnbox.txt:', result['total'], 'findings ==='\\)\nfor f in result['findings']:\n    print\\(f'  [{f[\\\\\"severity\\\\\"]}] {f[\\\\\"type\\\\\"]} -> {f.get\\(\\\\\"full_path\\\\\", f.get\\(\\\\\"path\\\\\", f.get\\(\\\\\"binary\\\\\", f.get\\(\\\\\"script\\\\\", \\\\\"?\\\\\"\\)\\)\\)\\)}'\\)\n\")",
       "Bash(python -m pytest tests/test_regression.py::test_finding_count -x -q 2>&1)",
-      "Bash(python -m pytest tests/ -q 2>&1)"
+      "Bash(python -m pytest tests/ -q 2>&1)",
+      "Bash(python -c \"\nimport sys\nsys.stdout = open\\(sys.stdout.fileno\\(\\), mode='w', encoding='utf-8', errors='replace'\\)\nfrom core.extractor import extract\ntext = open\\('tests/samples/lp_fowsniff.txt', encoding='utf-8', errors='replace'\\).read\\(\\)\nresult = extract\\(text\\)\nprint\\(f'Total: {result[\\\\\"total\\\\\"]}'\\)\nfor f in result['findings']:\n    ident = f.get\\('full_path', f.get\\('key_path', f.get\\('script_path', f.get\\('path', f.get\\('binary', '?'\\)\\)\\)\\)\\)\n    print\\(f'  [{f[\\\\\"severity\\\\\"]}] {f[\\\\\"type\\\\\"]} -> {ident}'\\)\n\")",
+      "Bash(python readpeas.py -f tests/samples/lp_fowsniff.txt --ip 10.10.10.10 --port 4444 2>&1)"
     ]
   }
 }

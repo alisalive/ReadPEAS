@@ -1,13 +1,32 @@
 """Detect readable SSH private keys from LinPEAS output."""
 
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 # Matches SSH private key file paths
 _SSH_PATH_RE = re.compile(
     r"(/[^\s,;'\"]*(?:id_rsa|id_ed25519|id_dsa|id_ecdsa)[^\s,;'\"]*"
     r"|/[^\s,;'\"]+\.pem"
     r"|/[^\s,;'\"]+\.bak)",
+    re.IGNORECASE,
+)
+
+# Paths under these prefixes are CA certs / system keyrings, never SSH keys.
+_SKIP_PATH_PREFIXES: Tuple[str, ...] = (
+    "/etc/ssl/certs/",
+    "/etc/ssl/private/",
+    "/usr/share/ca-certificates/",
+    "/usr/local/share/ca-certificates/",
+    "/etc/pki/",
+    "/usr/share/keyrings/",
+    "/var/lib/apt/keyrings/",
+    "/usr/share/doc/",
+    "/usr/lib/",
+)
+
+# Basenames that are recognisable SSH key names (with optional backup suffix).
+_SSH_KEY_BASENAMES = re.compile(
+    r"^id_(rsa|dsa|ecdsa|ed25519)(\.pub|\.bak|\.old|\.orig|\.pem)?$",
     re.IGNORECASE,
 )
 
@@ -54,11 +73,19 @@ def parse_ssh_keys_section(section_text: str) -> List[Dict]:
             path = m.group(1).rstrip(".,;:'\")")
             if not path or path in seen:
                 continue
-            # Exclude clearly non-key paths (e.g. .bak files that aren't keys)
+            # Skip system CA certificate / keyring directories
+            if any(path.startswith(pfx) for pfx in _SKIP_PATH_PREFIXES):
+                continue
             name_lower = path.lower().rsplit("/", 1)[-1]
-            is_key = any(k in name_lower for k in ("id_rsa", "id_ed25519", "id_dsa", "id_ecdsa", ".pem"))
+            is_key_basename = bool(_SSH_KEY_BASENAMES.match(name_lower))
+            is_key = any(k in name_lower for k in ("id_rsa", "id_ed25519", "id_dsa", "id_ecdsa"))
             is_bak = name_lower.endswith(".bak") or ".bak" in name_lower
-            if not (is_key or is_bak):
+            is_pem = name_lower.endswith(".pem")
+            # A .pem file qualifies only if it has an SSH key basename or
+            # "PRIVATE KEY" was seen in content above it.
+            if is_pem and not is_key_basename and not has_begin:
+                continue
+            if not (is_key or is_bak or (is_pem and (is_key_basename or has_begin))):
                 continue
             seen.add(path)
             results.append({

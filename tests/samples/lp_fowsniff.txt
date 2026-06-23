@@ -1,6 +1,10 @@
 Linux Privilege Escalation - LinPEAS
 
 
+╔══════════╣ Current user/group info
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#users
+uid=1001(sarah) gid=1001(sarah) groups=1001(sarah),4(adm),1003(users)
+
 ╔══════════╣ SUID - Check easy privesc, exploits and write perms
 ╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#sudo-and-suid
 -rwsr-xr-x 1 root root   166056 Jan 19 2024 /usr/bin/find
@@ -22,7 +26,7 @@ Linux Privilege Escalation - LinPEAS
 User sarah may run the following commands on fowsniff:
     (root) NOPASSWD: /usr/bin/vim
 
-╔══════════╣ Interesting GROUP writable files (not in Home)
+╔══════════╣ Interesting GROUP writable files (not in Home) (max 200)
 ╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#writable-files
 Group users:
 /opt/cube/cube.sh
@@ -30,3 +34,19 @@ Group users:
 ╔══════════╣ Executable files potentially added by user (limit 70)
 2018-03-11+23:25:44 /opt/cube/cube.sh
 2018-03-11+20:27:48 /etc/update-motd.d/00-header
+
+╔══════════╣ Analyzing SSH Files (limit 70)
+╚ https://book.hacktricks.xyz/network-services-pentesting/pentesting-ssh
+-rw-r--r-- 1 root root 1766 Mar 11 2018 /etc/ssh/ssh_host_rsa_key.pub
+-rw-r--r-- 1 root root  396 Mar 11 2018 /etc/ssh/ssh_host_ecdsa_key.pub
+
+╔══════════╣ Some certificates were found (Certs Certs Certs)
+/etc/ssl/certs/GeoTrust_Global_CA.pem
+/etc/ssl/certs/DigiCert_Global_Root_G2.pem
+/etc/ssl/certs/COMODO_RSA_Certification_Authority.pem
+/etc/ssl/certs/GlobalSign_Root_CA.pem
+/etc/ssl/certs/ISRG_Root_X1.pem
+/etc/ssl/certs/ca-certificates.crt
+/usr/share/ca-certificates/mozilla/GlobalSign_Root_CA.crt
+/usr/share/ca-certificates/mozilla/DigiCert_Global_Root_G2.crt
+/usr/lib/ssl/certs/ca-certificates.crt
