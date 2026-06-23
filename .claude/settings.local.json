@@ -94,7 +94,15 @@
       "Bash(python readpeas.py -f tests/samples/kenobi.txt 2>&1 | grep -E \"menu|Unknown|HIGH\")",
       "Bash(python readpeas.py -f tests/samples/road.txt --ip 10.10.10.10 --port 9001 2>&1 | grep -E \"LHOST|LPORT|10\\\\.10\\\\.10\\\\.10|9001\" | head -10)",
       "Bash(python readpeas.py -f tests/samples/skynet.txt --ip 10.10.10.10 --port 9001 2>&1 | grep -E \"10\\\\.10\\\\.10\\\\.10|9001|LHOST\" | head -5)",
-      "Bash(python -m pytest tests/ -v 2>&1 | grep -E \"PASSED|FAILED|ERROR|passed|failed\" | tail -5)"
+      "Bash(python -m pytest tests/ -v 2>&1 | grep -E \"PASSED|FAILED|ERROR|passed|failed\" | tail -5)",
+      "Bash(python readpeas.py -f tests/samples/chillhack.txt 2>/dev/null | grep -i log)",
+      "Bash(python -c \"\nfrom core.parser import split_sections\ntext = open\\('tests/samples/chillhack.txt'\\).read\\(\\)\nsections = split_sections\\(text\\)\nfor k in sections:\n    if 'log' in k.lower\\(\\) or 'writable' in k.lower\\(\\) or 'logrotten' in k.lower\\(\\):\n        print\\(repr\\(k\\)\\)\n\")",
+      "Bash(python -c \"\nfrom core.parser import split_sections\ntext = open\\('tests/samples/chillhack.txt', encoding='utf-8', errors='replace'\\).read\\(\\)\nsections = split_sections\\(text\\)\nfor k in sections:\n    if 'log' in k.lower\\(\\) or 'writable' in k.lower\\(\\) or 'logrotten' in k.lower\\(\\):\n        print\\(repr\\(k\\)\\)\n\")",
+      "Bash(python -c \"\nfrom core.parser import split_sections\ntext = open\\('tests/samples/chillhack.txt', encoding='utf-8', errors='replace'\\).read\\(\\)\nsections = split_sections\\(text\\)\nfor k, v in sections.items\\(\\):\n    if 'log' in k.lower\\(\\) or 'logrotten' in k.lower\\(\\):\n        print\\('=== SECTION:', repr\\(k\\), '==='\\)\n        print\\(v[:500]\\)\n\")",
+      "Bash(python -c \"\nimport sys\nsys.stdout.reconfigure\\(encoding='utf-8', errors='replace'\\)\nfrom core.parser import split_sections\ntext = open\\('tests/samples/chillhack.txt', encoding='utf-8', errors='replace'\\).read\\(\\)\nsections = split_sections\\(text\\)\nfor k, v in sections.items\\(\\):\n    if 'log' in k.lower\\(\\) or 'logrotten' in k.lower\\(\\):\n        print\\('=== SECTION:', repr\\(k\\), '==='\\)\n        print\\(repr\\(v[:500]\\)\\)\n\" 2>&1)",
+      "Bash(python readpeas.py -f tests/samples/chillhack.txt 2>/dev/null | grep -E \"log|HIGH|CRITICAL\")",
+      "Bash(python readpeas.py -f tests/samples/chillhack.txt 2>/dev/null | grep \"Total\")",
+      "Bash(python -m pytest tests/ -v 2>&1 | tail -30)"
     ]
   }
 }

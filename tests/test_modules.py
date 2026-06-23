@@ -511,6 +511,18 @@ class TestLogrotate:
         assert "/var/log/nginx/access.log" in paths
         assert "/home/reader/backups/access.log" in paths
 
+    def test_writable_prefix_format_detected(self):
+        # LinPEAS sometimes emits "Writable: /path" instead of bare "/path"
+        text = (
+            "Writable: /home/apaar/log\n"
+            "Writable: /var/log/nginx/access.log\n"
+        )
+        findings = logrotate_analyze(text)
+        assert len(findings) == 2
+        paths = {f["log_path"] for f in findings}
+        assert "/home/apaar/log" in paths
+        assert "/var/log/nginx/access.log" in paths
+
 
 # ── credentials.py ────────────────────────────────────────────────────────────
 

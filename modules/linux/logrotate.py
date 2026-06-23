@@ -4,8 +4,8 @@ import re
 from typing import Dict, List
 
 # LinPEAS identifies this section uniquely with "logrotten" in the header.
-# Log file paths are listed one per line, starting with '/'.
-_LOG_PATH_RE = re.compile(r"^(/[^\s#]+)")
+# Paths appear as bare "/path" lines or as "Writable: /path" lines.
+_LOG_PATH_RE = re.compile(r"^(?:Writable:\s+)?(/[^\s#]+)")
 
 # Ignore version/metadata lines that happen to start with a path-like token
 _SKIP_WORDS = {"logrotate", "default", "compress"}

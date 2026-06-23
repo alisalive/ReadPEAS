@@ -24,7 +24,7 @@ _SAMPLES = [
     ("gamingserver.txt",  9, True),
     ("ohmywebserver.txt", 6, True),
     ("road.txt",          7, True),
-    ("chillhack.txt",     6, True),
+    ("chillhack.txt",     8, True),
     ("kenobi.txt",        9, False),
 ]
 
