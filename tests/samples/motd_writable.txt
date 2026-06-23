@@ -1,0 +1,9 @@
+Linux Privilege Escalation - LinPEAS
+
+
+╔══════════╣ Interesting GROUP writable files (not in Home)
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#writable-files
+Group sysadmin:
+/etc/update-motd.d/00-header
+/etc/update-motd.d/10-help-text
+/var/log/sysadmin.log

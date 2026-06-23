@@ -1,0 +1,10 @@
+Linux Privilege Escalation - LinPEAS
+
+
+╔══════════╣ Interesting processes (non-root processes with special perms)
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#processes
+root       1423  0.0  0.1  14436  2024 ?   Ss  Jan15  0:00 tmux new-session -s dev -d -S /.devs/dev_sess
+
+╔══════════╣ Interesting writable files owned by me or writable by everyone
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#writable-files
+Writable: /.devs/dev_sess

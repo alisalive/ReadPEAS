@@ -20,26 +20,42 @@ from modules.linux.mysql_udf import analyze as analyze_mysql_udf
 from modules.linux.docker_sock import analyze as analyze_docker_sock
 from modules.linux.credentials import analyze as analyze_credentials
 from modules.linux.wildcard_injection import analyze as analyze_wildcard
+from modules.linux.motd_writable import analyze as analyze_motd_writable
+from modules.linux.lxd_group import analyze as analyze_lxd_group
+from modules.linux.docker_group import analyze as analyze_docker_group
+from modules.linux.tmux_socket import analyze as analyze_tmux_socket
+from modules.linux.service_binary import analyze as analyze_service_binary
+from modules.linux.ssh_keys import analyze as analyze_ssh_keys
+from modules.linux.screen_exploit import analyze as analyze_screen_exploit
+from modules.linux.writable_cron_d import analyze as analyze_writable_cron_d
 
 # Maps each analyzer to the LinPEAS section name keywords it handles.
 SECTION_MAP = [
-    (analyze_sudo,          ["sudo", "sudoers"]),
-    (analyze_suid,          ["suid", "sgid"]),
-    (analyze_capabilities,  ["capabilities", "getcap"]),
-    (analyze_cron,          ["cron", "cronjob", "crontab"]),
-    (analyze_writable,      ["writable", "interesting files", "file permissions"]),
-    (analyze_writable_cron, ["cron", "cronjob", "crontab", "writable", "interesting files"]),
-    (analyze_path,          ["path", "environment"]),
-    (analyze_groups,        ["groups", "current user", "uid="]),
-    (analyze_pythonpath,    ["sudo", "sudoers"]),
-    (analyze_ld_preload,    ["sudo", "sudoers"]),
-    (analyze_nfs,           ["nfs", "exports", "no_root_squash", "mount"]),
-    (analyze_systemd,       ["init", "systemd", "rc.d", "interesting files", "writable"]),
-    (analyze_logrotate,     ["logrotten", "writable log"]),
-    (analyze_mysql_udf,     ["processes", "mysql", "software", "interesting processes"]),
-    (analyze_docker_sock,   ["unix sockets", "sockets", "interesting files", "writable"]),
-    (analyze_credentials,   ["password", "credential", "backup", "wordpress", "http conf", "analyzing", "history"]),
-    (analyze_wildcard,      ["cron", "cronjob", "crontab"]),
+    (analyze_sudo,            ["sudo", "sudoers"]),
+    (analyze_suid,            ["suid"]),
+    (analyze_capabilities,    ["capabilities", "getcap"]),
+    (analyze_cron,            ["cron", "cronjob", "crontab"]),
+    (analyze_writable,        ["writable", "interesting files", "file permissions"]),
+    (analyze_writable_cron,   ["cron", "cronjob", "crontab", "writable", "interesting files"]),
+    (analyze_path,            ["path", "environment"]),
+    (analyze_groups,          ["groups", "current user", "uid="]),
+    (analyze_pythonpath,      ["sudo", "sudoers"]),
+    (analyze_ld_preload,      ["sudo", "sudoers"]),
+    (analyze_nfs,             ["nfs", "exports", "no_root_squash", "mount"]),
+    (analyze_systemd,         ["init", "systemd", "rc.d", "interesting files", "writable"]),
+    (analyze_logrotate,       ["logrotten", "writable log"]),
+    (analyze_mysql_udf,       ["processes", "mysql", "software", "interesting processes"]),
+    (analyze_docker_sock,     ["unix sockets", "sockets", "interesting files", "writable"]),
+    (analyze_credentials,     ["password", "credential", "backup", "wordpress", "http conf", "analyzing", "history"]),
+    (analyze_wildcard,        ["cron", "cronjob", "crontab"]),
+    (analyze_motd_writable,   ["group writable", "interesting writable", "update-motd"]),
+    (analyze_lxd_group,       ["groups", "current user", "interesting groups"]),
+    (analyze_docker_group,    ["groups", "current user", "interesting groups"]),
+    (analyze_tmux_socket,     ["processes", "running processes", "interesting processes", "interesting writable", "writable"]),
+    (analyze_service_binary,  ["analyzing .service", "service file", "systemd"]),
+    (analyze_ssh_keys,        ["private ssh", "ssh key", "analyzing ssh"]),
+    (analyze_screen_exploit,  ["suid"]),
+    (analyze_writable_cron_d, ["writable", "cron", "interesting files"]),
 ]
 
 _SEVERITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}

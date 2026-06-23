@@ -1,0 +1,6 @@
+Linux Privilege Escalation - LinPEAS
+
+
+╔══════════╣ Capabilities
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#capabilities
+/usr/bin/python3.8 = cap_setuid,cap_net_bind_service+eip

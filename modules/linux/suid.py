@@ -22,6 +22,22 @@ def _load_db() -> Dict:
 
 # ── Public API ─────────────────────────────────────────────────────────────────
 
+def _is_sgid_only(stripped_line: str) -> bool:
+    """Return True if the line shows SGID permissions but not SUID.
+
+    SUID: owner-execute position (index 3) is 's' or 'S'.
+    SGID: group-execute position (index 6) is 's' or 'S'.
+    Skip entries that are SGID-only; they do not grant root access.
+    """
+    m = _PERM_STR_RE.match(stripped_line)
+    if not m:
+        return False
+    perm = m.group(1)
+    has_suid = perm[3] in ("s", "S")
+    has_sgid = perm[6] in ("s", "S")
+    return has_sgid and not has_suid
+
+
 def parse_suid_section(section_text: str) -> List[str]:
     """Extract SUID binary full paths from LinPEAS SUID section text."""
     paths: List[str] = []
@@ -29,6 +45,9 @@ def parse_suid_section(section_text: str) -> List[str]:
     for line in section_text.splitlines():
         stripped = line.strip()
         if not stripped:
+            continue
+        # Skip SGID-only entries (group-execute setgid, not owner setuid).
+        if _is_sgid_only(stripped):
             continue
         # Binary path is the last token starting with '/' (handles ls -l format)
         for token in reversed(stripped.split()):
@@ -93,6 +112,9 @@ def _replace_binary(commands: List[str], matched_as: str, full_path: str) -> Lis
             result.append(cmd)
     return result
 
+
+# Matches the permission string at the start of an ls -l line (10 chars).
+_PERM_STR_RE = re.compile(r"^([-dl][rwxsStT-]{9})\s")
 
 _NON_STANDARD_PREFIXES = ("/nfs_share/", "/opt/", "/home/", "/tmp/", "/var/", "/srv/")
 _STANDARD_PREFIXES = ("/usr/bin/", "/bin/", "/usr/sbin/", "/sbin/")

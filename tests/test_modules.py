@@ -16,6 +16,14 @@ from modules.linux.nfs import analyze as nfs_analyze
 from modules.linux.logrotate import analyze as logrotate_analyze
 from modules.linux.credentials import analyze as creds_analyze
 from modules.linux.wildcard_injection import analyze as wildcard_analyze
+from modules.linux.lxd_group import analyze as lxd_group_analyze
+from modules.linux.docker_group import analyze as docker_group_analyze
+from modules.linux.motd_writable import analyze as motd_analyze
+from modules.linux.tmux_socket import analyze as tmux_analyze
+from modules.linux.service_binary import analyze as service_binary_analyze
+from modules.linux.ssh_keys import analyze as ssh_keys_analyze
+from modules.linux.screen_exploit import analyze as screen_analyze
+from modules.linux.writable_cron_d import analyze as writable_cron_d_analyze
 
 
 # ── sudo.py ───────────────────────────────────────────────────────────────────
@@ -347,25 +355,10 @@ class TestPathHijack:
 # ── groups.py ─────────────────────────────────────────────────────────────────
 
 class TestGroups:
-    def test_docker_group_is_critical(self):
-        text = "uid=1000(user) gid=1000(user) groups=1000(user),998(docker)\n"
-        findings = groups_analyze(text)
-        f = next((x for x in findings if x["group"] == "docker"), None)
-        assert f is not None
-        assert f["type"] == "group"
-        assert f["severity"] == "CRITICAL"
-        assert len(f["commands"]) > 0
-
-    def test_lxd_group_is_critical(self):
-        text = "uid=1000(user) gid=1000(user) groups=1000(user),116(lxd)\n"
-        findings = groups_analyze(text)
-        f = next((x for x in findings if x["group"] == "lxd"), None)
-        assert f is not None
-        assert f["severity"] == "CRITICAL"
+    # docker → now handled by docker_group.py
+    # lxd    → now handled by lxd_group.py
 
     @pytest.mark.parametrize("group,expected_severity", [
-        ("docker", "CRITICAL"),
-        ("lxd",    "CRITICAL"),
         ("disk",   "CRITICAL"),
         ("shadow", "CRITICAL"),
         ("adm",    "HIGH"),
@@ -381,6 +374,66 @@ class TestGroups:
     def test_unknown_group_not_reported(self):
         text = "uid=1000(user) gid=1000(user) groups=1000(user),42(somegroup)\n"
         findings = groups_analyze(text)
+        assert findings == []
+
+    def test_disk_group_commands(self):
+        text = "uid=1000(user) gid=1000(user) groups=1000(user),6(disk)\n"
+        findings = groups_analyze(text)
+        f = next((x for x in findings if x["group"] == "disk"), None)
+        assert f is not None
+        assert f["severity"] == "CRITICAL"
+        assert any("debugfs" in c for c in f["commands"])
+
+    def test_shadow_group_commands(self):
+        text = "uid=1000(user) gid=1000(user) groups=1000(user),42(shadow)\n"
+        findings = groups_analyze(text)
+        f = next((x for x in findings if x["group"] == "shadow"), None)
+        assert f is not None
+        assert f["severity"] == "CRITICAL"
+        assert any("/etc/shadow" in c for c in f["commands"])
+
+
+# ── lxd_group.py ──────────────────────────────────────────────────────────────
+
+class TestLxdGroup:
+    def test_lxd_group_is_critical(self):
+        text = "uid=1000(user) gid=1000(user) groups=1000(user),116(lxd)\n"
+        findings = lxd_group_analyze(text)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f["type"] == "lxd_group"
+        assert f["severity"] == "CRITICAL"
+        assert f["group_name"] == "lxd"
+        assert any("lxc" in c for c in f["commands"])
+
+    def test_lxc_group_also_detected(self):
+        text = "uid=1000(user) gid=1000(user) groups=1000(user),999(lxc)\n"
+        findings = lxd_group_analyze(text)
+        assert len(findings) == 1
+        assert findings[0]["group_name"] == "lxc"
+
+    def test_no_lxd_returns_empty(self):
+        text = "uid=1000(user) gid=1000(user) groups=1000(user),998(docker)\n"
+        findings = lxd_group_analyze(text)
+        assert findings == []
+
+
+# ── docker_group.py ───────────────────────────────────────────────────────────
+
+class TestDockerGroup:
+    def test_docker_group_is_critical(self):
+        text = "uid=1000(user) gid=1000(user) groups=1000(user),998(docker)\n"
+        findings = docker_group_analyze(text)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f["type"] == "docker_group"
+        assert f["severity"] == "CRITICAL"
+        assert f["group_name"] == "docker"
+        assert any("docker run" in c for c in f["commands"])
+
+    def test_no_docker_returns_empty(self):
+        text = "uid=1000(user) gid=1000(user) groups=1000(user),116(lxd)\n"
+        findings = docker_group_analyze(text)
         assert findings == []
 
 
@@ -750,3 +803,290 @@ class TestMarkdownExport:
 
         content = (tmp_path / "test.md").read_text(encoding="utf-8")
         assert "## INFO" not in content
+
+
+# ── suid.py SGID filter ────────────────────────────────────────────────────────
+
+class TestSuidSgidFilter:
+    def test_sgid_only_line_not_flagged_as_suid(self):
+        # -rwxr-sr-x: s is in group position (index 6) — SGID only, not SUID
+        text = "-rwxr-sr-x 1 root shadow 35936 Mar 2021 /usr/bin/unix_chkpwd\n"
+        findings = suid_analyze(text)
+        # Should produce no findings (SGID-only binaries are filtered)
+        suid_findings = [f for f in findings if f.get("full_path") == "/usr/bin/unix_chkpwd"]
+        assert suid_findings == []
+
+    def test_suid_line_still_detected(self):
+        # -rwsr-xr-x: s is in owner position (index 3) — real SUID
+        text = "-rwsr-xr-x 1 root root 166056 Jan 2024 /usr/bin/find\n"
+        findings = suid_analyze(text)
+        f = next((x for x in findings if x["full_path"] == "/usr/bin/find"), None)
+        assert f is not None
+        assert f["severity"] == "CRITICAL"
+
+    def test_multiple_sgid_binaries_all_filtered(self):
+        text = (
+            "-rwxr-sr-x 1 root shadow  35936 Mar 2021 /usr/bin/unix_chkpwd\n"
+            "-rwxr-sr-x 1 root tty     19248 Sep 2022 /usr/bin/wall\n"
+            "-rwxr-sr-x 1 root postdrop 14424 Jan 2021 /usr/sbin/postdrop\n"
+        )
+        findings = suid_analyze(text)
+        assert findings == []
+
+    def test_both_suid_and_sgid_suid_still_reported(self):
+        # -rwsr-sr-x has BOTH suid and sgid — keep it (has_suid is True)
+        text = "-rwsr-sr-x 1 root root 12345 Jan 2024 /opt/custom\n"
+        findings = suid_analyze(text)
+        assert len(findings) == 1
+        assert findings[0]["full_path"] == "/opt/custom"
+
+
+# ── capabilities.py interpreter commands ──────────────────────────────────────
+
+class TestCapabilitiesInterpreter:
+    def test_python_cap_setuid_specific_command(self):
+        text = "/usr/bin/python3.8 = cap_setuid+ep\n"
+        findings = caps_analyze(text)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f["severity"] == "CRITICAL"
+        # Should have interpreter-specific command with os.setuid
+        assert any("os.setuid(0)" in c for c in f["commands"])
+        assert any("/usr/bin/python3.8" in c for c in f["commands"])
+
+    def test_perl_cap_setuid_specific_command(self):
+        text = "/usr/bin/perl = cap_setuid+ep\n"
+        findings = caps_analyze(text)
+        assert len(findings) == 1
+        assert any("POSIX::setuid" in c or "setuid" in c for c in findings[0]["commands"])
+
+    def test_ruby_cap_setuid_specific_command(self):
+        text = "/usr/bin/ruby = cap_setuid+ep\n"
+        findings = caps_analyze(text)
+        assert len(findings) == 1
+        assert any("setuid" in c.lower() for c in findings[0]["commands"])
+
+    def test_cap_dac_read_search_is_critical(self):
+        text = "/usr/bin/openssl = cap_dac_read_search+ep\n"
+        findings = caps_analyze(text)
+        assert len(findings) == 1
+        # cap_dac_read_search is now in _ALWAYS_CRITICAL_CAPS
+        assert findings[0]["severity"] == "CRITICAL"
+
+    def test_cap_dac_override_is_critical(self):
+        text = "/usr/bin/somebin = cap_dac_override+ep\n"
+        findings = caps_analyze(text)
+        assert len(findings) == 1
+        assert findings[0]["severity"] == "CRITICAL"
+
+    def test_cap_setuid_with_net_bind_interpreter(self):
+        # cap_setuid,cap_net_bind_service+eip — interpreter still gets specific cmd
+        text = "/usr/bin/python3.8 = cap_setuid,cap_net_bind_service+eip\n"
+        findings = caps_analyze(text)
+        assert len(findings) == 1
+        assert findings[0]["severity"] == "CRITICAL"
+        assert any("os.setuid(0)" in c for c in findings[0]["commands"])
+
+
+# ── motd_writable.py ──────────────────────────────────────────────────────────
+
+class TestMotdWritable:
+    def test_motd_path_detected(self):
+        text = "/etc/update-motd.d/00-header\n"
+        findings = motd_analyze(text)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f["type"] == "motd_writable"
+        assert f["severity"] == "CRITICAL"
+        assert f["motd_path"] == "/etc/update-motd.d/00-header"
+        assert len(f["commands"]) > 0
+
+    def test_multiple_motd_scripts_detected(self):
+        text = (
+            "/etc/update-motd.d/00-header\n"
+            "/etc/update-motd.d/10-help-text\n"
+        )
+        findings = motd_analyze(text)
+        assert len(findings) == 2
+
+    def test_non_motd_path_not_detected(self):
+        text = "/var/log/syslog\n/etc/passwd\n"
+        findings = motd_analyze(text)
+        assert findings == []
+
+    def test_motd_in_ls_l_line_detected(self):
+        text = "-rwxrwxr-x 1 root sysadmin 1234 Jan 2024 /etc/update-motd.d/00-header\n"
+        findings = motd_analyze(text)
+        assert len(findings) == 1
+        assert findings[0]["motd_path"] == "/etc/update-motd.d/00-header"
+
+    def test_commands_include_rootbash(self):
+        text = "/etc/update-motd.d/00-header\n"
+        findings = motd_analyze(text)
+        cmds = findings[0]["commands"]
+        assert any("rootbash" in c or "/tmp/rootbash" in c for c in cmds)
+
+
+# ── tmux_socket.py ────────────────────────────────────────────────────────────
+
+class TestTmuxSocket:
+    def test_root_tmux_socket_detected(self):
+        text = "root 1423 0.0 tmux new-session -s dev -d -S /.devs/dev_sess\n"
+        findings = tmux_analyze(text)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f["type"] == "tmux_socket"
+        assert f["socket_path"] == "/.devs/dev_sess"
+        assert f["severity"] == "HIGH"  # not confirmed writable yet
+
+    def test_writable_socket_is_critical(self):
+        text = (
+            "root 1423 0.0 tmux -S /.devs/dev_sess new-session\n"
+            "Writable: /.devs/dev_sess\n"
+        )
+        findings = tmux_analyze(text)
+        assert len(findings) == 1
+        assert findings[0]["severity"] == "CRITICAL"
+
+    def test_no_tmux_returns_empty(self):
+        text = "root 1234 /usr/sbin/sshd -D\n"
+        findings = tmux_analyze(text)
+        assert findings == []
+
+    def test_commands_include_attach(self):
+        text = "root 1423 0.0 tmux -S /.devs/dev_sess\n"
+        findings = tmux_analyze(text)
+        assert len(findings) == 1
+        assert any("attach" in c for c in findings[0]["commands"])
+
+
+# ── service_binary.py ─────────────────────────────────────────────────────────
+
+class TestServiceBinary:
+    def test_writable_service_binary_detected(self):
+        text = "/lib/systemd/system/nagios.service is calling this writable executable: /usr/local/nagios/bin/npcd\n"
+        findings = service_binary_analyze(text)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f["type"] == "service_binary"
+        assert f["severity"] == "HIGH"
+        assert f["binary_path"] == "/usr/local/nagios/bin/npcd"
+        assert len(f["commands"]) > 0
+
+    def test_commands_include_reverse_shell(self):
+        text = "/lib/systemd/system/foo.service is calling this writable executable: /opt/foo/bin/foo\n"
+        findings = service_binary_analyze(text)
+        assert any("LHOST" in c or "bash" in c.lower() for c in findings[0]["commands"])
+
+    def test_no_writable_binary_returns_empty(self):
+        text = "This service file is fine: /usr/bin/systemd\n"
+        findings = service_binary_analyze(text)
+        assert findings == []
+
+
+# ── ssh_keys.py ───────────────────────────────────────────────────────────────
+
+class TestSshKeys:
+    def test_id_rsa_bak_is_high(self):
+        text = "/opt/id_rsa.bak\n"
+        findings = ssh_keys_analyze(text)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f["type"] == "ssh_keys"
+        assert f["severity"] == "HIGH"
+        assert f["key_path"] == "/opt/id_rsa.bak"
+
+    def test_id_rsa_is_high_by_default(self):
+        text = "/home/user/.ssh/id_rsa\n"
+        findings = ssh_keys_analyze(text)
+        assert len(findings) == 1
+        assert findings[0]["severity"] == "HIGH"
+
+    def test_unencrypted_key_content_is_critical(self):
+        text = (
+            "-----BEGIN RSA PRIVATE KEY-----\n"
+            "/opt/id_rsa\n"
+        )
+        findings = ssh_keys_analyze(text)
+        f = next((x for x in findings if x["key_path"] == "/opt/id_rsa"), None)
+        assert f is not None
+        assert f["severity"] == "CRITICAL"
+
+    def test_commands_include_ssh2john_for_high(self):
+        text = "/opt/id_rsa.bak\n"
+        findings = ssh_keys_analyze(text)
+        # Encrypted/unknown → should suggest ssh2john
+        cmds = findings[0]["commands"]
+        assert any("ssh" in c.lower() for c in cmds)
+
+    def test_non_key_path_not_detected(self):
+        text = "/var/log/auth.log\n/etc/passwd\n"
+        findings = ssh_keys_analyze(text)
+        assert findings == []
+
+
+# ── screen_exploit.py ─────────────────────────────────────────────────────────
+
+class TestScreenExploit:
+    def test_screen_450_detected(self):
+        text = "-rwsr-xr-x 1 root root 1564400 Nov 2017 /bin/screen-4.5.0\n"
+        findings = screen_analyze(text)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f["type"] == "screen_exploit"
+        assert f["severity"] == "CRITICAL"
+        assert f["binary_path"] == "/bin/screen-4.5.0"
+
+    def test_commands_include_edb41154_steps(self):
+        text = "/bin/screen-4.5.0\n"
+        findings = screen_analyze(text)
+        assert len(findings) == 1
+        cmds = findings[0]["commands"]
+        assert any("libhax" in c for c in cmds)
+        assert any("rootshell" in c for c in cmds)
+
+    def test_non_vulnerable_screen_not_detected(self):
+        text = "-rwsr-xr-x 1 root root 1234 Jan 2023 /usr/bin/screen\n"
+        findings = screen_analyze(text)
+        assert findings == []
+
+    def test_screen_4050_also_detected(self):
+        text = "/usr/bin/screen-4.05.00\n"
+        findings = screen_analyze(text)
+        assert len(findings) == 1
+
+
+# ── writable_cron_d.py ────────────────────────────────────────────────────────
+
+class TestWritableCronD:
+    def test_world_writable_cron_d_file_is_critical(self):
+        text = "-rw-rw-rw- 1 root root 120 Jan 2024 /etc/cron.d/backup\n"
+        findings = writable_cron_d_analyze(text)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f["type"] == "writable_cron_d"
+        assert f["severity"] == "CRITICAL"
+        assert f["cron_path"] == "/etc/cron.d/backup"
+
+    def test_bare_path_in_cron_d_detected(self):
+        text = "/etc/cron.d/malicious\n"
+        findings = writable_cron_d_analyze(text)
+        assert len(findings) == 1
+        assert findings[0]["cron_path"] == "/etc/cron.d/malicious"
+
+    def test_non_writable_cron_d_not_detected(self):
+        text = "-rw-r--r-- 1 root root 120 Jan 2024 /etc/cron.d/backup\n"
+        findings = writable_cron_d_analyze(text)
+        assert findings == []
+
+    def test_cron_daily_detected(self):
+        text = "/etc/cron.daily/logrotate\n"
+        findings = writable_cron_d_analyze(text)
+        assert len(findings) == 1
+        assert "/etc/cron.daily/" in findings[0]["cron_path"]
+
+    def test_commands_include_reverse_shell(self):
+        text = "/etc/cron.d/backup\n"
+        findings = writable_cron_d_analyze(text)
+        cmds = findings[0]["commands"]
+        assert any("LHOST" in c or "root bash" in c for c in cmds)

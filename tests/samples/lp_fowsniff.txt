@@ -1,0 +1,18 @@
+Linux Privilege Escalation - LinPEAS
+
+
+╔══════════╣ SUID - Check easy privesc, exploits and write perms
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#sudo-and-suid
+-rwxr-sr-x 1 root shadow  35936 Mar  8 2021 /usr/bin/unix_chkpwd
+-rwxr-sr-x 1 root shadow  22696 Sep 22 2022 /usr/bin/dotlockfile
+-rwxr-sr-x 1 root tty     19248 Sep 22 2022 /usr/bin/wall
+-rwxr-sr-x 1 root crontab 43352 Nov 27 2020 /usr/bin/crontab
+-rwxr-sr-x 1 root mlocate 43104 Mar  2 2019 /usr/bin/mlocate
+-rwxr-sr-x 1 root mail    14632 Dec  7 2013 /usr/bin/dotlockfile
+-rwxr-sr-x 1 root postdrop 14424 Jan 28 2021 /usr/sbin/postdrop
+-rwxr-sr-x 1 root postdrop 22600 Jan 28 2021 /usr/sbin/postqueue
+
+╔══════════╣ Checking 'sudo -l', /etc/sudoers, and /etc/sudoers.d
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#sudo-and-suid
+User sarah may run the following commands on fowsniff:
+    (root) NOPASSWD: /usr/bin/vim

@@ -1,0 +1,7 @@
+Linux Privilege Escalation - LinPEAS
+
+
+╔══════════╣ Possible private SSH keys found!
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#ssh-keys
+/opt/id_rsa.bak
+/home/user/.ssh/id_rsa

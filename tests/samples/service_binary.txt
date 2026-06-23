@@ -1,0 +1,6 @@
+Linux Privilege Escalation - LinPEAS
+
+
+╔══════════╣ Analyzing .service files
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#services
+/lib/systemd/system/nagios.service is calling this writable executable: /usr/local/nagios/bin/npcd

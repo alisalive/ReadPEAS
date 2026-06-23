@@ -17,7 +17,15 @@ _PATTERNS: List[Tuple[str, re.Pattern]] = [
     ("mysql_cli",   re.compile(r"\bmysql\b.*?-p([A-Za-z0-9!@#$%^&*()\-_+={}\[\]]{3,})")),
     # SECRET_KEY = value  /  API_KEY: value
     ("secret_key",  re.compile(r"\b(?:SECRET|API)_(?:KEY|TOKEN)\s*[=:]\s*['\"]?([^\s'\"#;,]{6,})['\"]?", re.IGNORECASE)),
+    # Ansible Vault hash: $ANSIBLE_VAULT;1.1;AES256
+    ("ansible_vault", re.compile(r"(\$ANSIBLE_VAULT;[\d.]+;AES\d+)")),
 ]
+
+# Cloud credential file paths that indicate exposed credentials.
+_CLOUD_CRED_RE = re.compile(
+    r"(/[^\s]+(?:\.aws/credentials|\.config/gcloud/[^\s]*))",
+    re.IGNORECASE,
+)
 
 # Values to reject (common placeholders, empty strings, single-word non-secrets)
 _PLACEHOLDER_VALUES = {
@@ -62,6 +70,7 @@ def parse_credentials_section(section_text: str) -> List[Tuple[str, str]]:
     """Extract (password_value, context_snippet) pairs from LinPEAS section text.
 
     Deduplicates by password value; skips placeholders and blank values.
+    Also detects Ansible Vault hashes and cloud credential file paths.
     """
     results: List[Tuple[str, str]] = []
     seen_passwords: set = set()
@@ -73,10 +82,19 @@ def parse_credentials_section(section_text: str) -> List[Tuple[str, str]]:
         if _SKIP_LINE_RE.match(line):
             continue
 
+        # Cloud credential file paths (bypass placeholder filter)
+        cloud_m = _CLOUD_CRED_RE.search(line)
+        if cloud_m:
+            value = cloud_m.group(1)
+            if value not in seen_passwords:
+                seen_passwords.add(value)
+                results.append((value, _shorten(line)))
+
         for _label, pattern in _PATTERNS:
             for m in pattern.finditer(line):
                 value = m.group(1).strip("'\"")
-                if _is_placeholder(value):
+                # Ansible vault hashes bypass the placeholder filter
+                if not value.startswith("$ANSIBLE_VAULT;") and _is_placeholder(value):
                     continue
                 if value in seen_passwords:
                     continue
@@ -89,6 +107,15 @@ def parse_credentials_section(section_text: str) -> List[Tuple[str, str]]:
 
 def generate_commands(password: str) -> List[str]:
     """Generate credential reuse commands for a found password."""
+    if password.startswith("$ANSIBLE_VAULT;"):
+        return [
+            f"# Ansible Vault encrypted secret found:",
+            "# Save the vault content to vault.txt then crack:",
+            "ansible2john vault.txt > hash.txt",
+            "john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt",
+            f"# Try credential reuse: su - <user>  |  password: {password}",
+            f"# Or: ssh <user>@LHOST  with above password",
+        ]
     return [
         f"su root  # try password: {password}",
         f"su $(whoami)  # try password: {password}",

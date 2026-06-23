@@ -1,0 +1,6 @@
+Linux Privilege Escalation - LinPEAS
+
+
+╔══════════╣ Interesting writable files owned by me or writable by everyone
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#writable-files
+-rw-rw-rw- 1 root root 120 Jan 15 2024 /etc/cron.d/backup

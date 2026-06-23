@@ -116,6 +116,25 @@ def print_finding(finding: Dict, ip: Optional[str] = None, port: int = 4444) -> 
         header = f"[{severity}] {ftype} -> {script} (tar wildcard in cron)"
         if working_dir:
             header += f"  [workdir: {working_dir}]"
+    elif ftype == "motd_writable":
+        header = f"[{severity}] {ftype} -> {finding.get('motd_path', '')}  ({finding.get('description', 'runs as root on SSH login')})"
+    elif ftype == "lxd_group":
+        header = f"[{severity}] {ftype} -> {finding.get('description', '')}"
+    elif ftype == "docker_group":
+        header = f"[{severity}] {ftype} -> {finding.get('description', '')}"
+    elif ftype == "tmux_socket":
+        header = f"[{severity}] {ftype} -> {finding.get('socket_path', '')}  ({finding.get('description', 'root tmux session')})"
+    elif ftype == "service_binary":
+        header = f"[{severity}] {ftype} -> {finding.get('binary_path', '')}  ({finding.get('description', 'writable service binary')})"
+    elif ftype == "ssh_keys":
+        key_path = finding.get("key_path", "")
+        enc = finding.get("encrypted")
+        enc_str = "unencrypted" if enc is False else ("encrypted" if enc else "unknown encryption")
+        header = f"[{severity}] {ftype} -> {key_path}  ({enc_str})"
+    elif ftype == "screen_exploit":
+        header = f"[{severity}] {ftype} -> {finding.get('binary_path', '')}  ({finding.get('description', 'EDB-41154')})"
+    elif ftype == "writable_cron_d":
+        header = f"[{severity}] {ftype} -> {finding.get('cron_path', '')}  ({finding.get('description', 'world-writable cron.d file')})"
     else:
         # sudo / suid / capabilities
         binary    = finding.get("binary", "")

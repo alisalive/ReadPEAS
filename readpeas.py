@@ -56,6 +56,24 @@ def _finding_md_title(f: Dict) -> str:
         return f"{ftype} — mysqld running as root (UDF injection)"
     elif ftype == "docker_sock":
         return f"{ftype} — /var/run/docker.sock (writable)"
+    elif ftype == "motd_writable":
+        return f"{ftype} — {f.get('motd_path', '')} (runs as root on SSH login)"
+    elif ftype == "lxd_group":
+        return f"{ftype} — {f.get('description', '')}"
+    elif ftype == "docker_group":
+        return f"{ftype} — {f.get('description', '')}"
+    elif ftype == "tmux_socket":
+        return f"{ftype} — {f.get('socket_path', '')} (root tmux socket)"
+    elif ftype == "service_binary":
+        return f"{ftype} — {f.get('binary_path', '')} (writable service binary)"
+    elif ftype == "ssh_keys":
+        enc = f.get("encrypted")
+        enc_str = "unencrypted" if enc is False else ("encrypted" if enc else "unknown encryption")
+        return f"{ftype} — {f.get('key_path', '')} ({enc_str})"
+    elif ftype == "screen_exploit":
+        return f"{ftype} — {f.get('binary_path', '')} (EDB-41154)"
+    elif ftype == "writable_cron_d":
+        return f"{ftype} — {f.get('cron_path', '')} (writable cron.d file)"
     else:
         return f"{ftype} — {f.get('full_path', f.get('file', ''))}"
 

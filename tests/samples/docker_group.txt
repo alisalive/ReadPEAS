@@ -1,0 +1,6 @@
+Linux Privilege Escalation - LinPEAS
+
+
+╔══════════╣ Interesting Groups - Linux Privesc
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation/interesting-groups-linux-pe
+uid=1000(ctf) gid=1000(ctf) groups=1000(ctf),998(docker)

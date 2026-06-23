@@ -26,6 +26,17 @@ _SAMPLES = [
     ("road.txt",          7, True),
     ("chillhack.txt",     8, True),
     ("kenobi.txt",        9, False),
+    # New module regression samples
+    ("motd_writable.txt",   2, True),
+    ("lxd_group.txt",       1, True),
+    ("docker_group.txt",    1, True),
+    ("tmux_socket.txt",     1, True),
+    ("service_binary.txt",  1, False),
+    ("ssh_keys.txt",        2, False),
+    ("screen_exploit.txt",  2, True),
+    ("writable_cron_d.txt", 1, True),
+    ("interpreter_caps.txt",1, True),
+    ("disk_group.txt",      1, True),
 ]
 
 _SAMPLES_DIR = os.path.join(os.path.dirname(__file__), "samples")
