@@ -1,5 +1,7 @@
 """Print ReadPEAS findings to the terminal with ANSI colors."""
 
+import os
+import sys
 from typing import Dict, List, Optional
 
 # ── ANSI color constants ───────────────────────────────────────────────────────
@@ -10,6 +12,9 @@ RED    = "\x1b[31m"
 YELLOW = "\x1b[33m"
 CYAN   = "\x1b[36m"
 GREEN  = "\x1b[32m"
+
+# Claude/Anthropic brand orange, used for the banner ASCII art only.
+_BANNER_RGB = (217, 119, 87)  # #D97757
 
 _VERSION = "0.1.0"
 _DIVIDER = DIM + "-" * 60 + RESET
@@ -24,6 +29,13 @@ def _inject_ip_port(cmd: str, ip: Optional[str], port: int) -> str:
     return cmd.replace("LHOST", ip).replace("LPORT", str(port))
 
 
+def _colorize(text: str, r: int, g: int, b: int) -> str:
+    """Wrap text in a 24-bit ANSI color code, unless output isn't a real tty or NO_COLOR is set."""
+    if not sys.stdout.isatty() or os.environ.get("NO_COLOR"):
+        return text
+    return f"\x1b[38;2;{r};{g};{b}m{text}\x1b[0m"
+
+
 def severity_color(severity: str) -> str:
     """Return the ANSI color+style prefix for a given severity string."""
     return {
@@ -36,13 +48,14 @@ def severity_color(severity: str) -> str:
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def print_banner() -> None:
-    """Print the ReadPEAS ASCII banner."""
-    print(GREEN + BOLD + r"  ____                _ ____  _____    _    ____  " + RESET)
-    print(GREEN + BOLD + r" |  _ \ ___  __ _  __| |  _ \| ____|  / \  / ___| " + RESET)
-    print(GREEN + BOLD + r" | |_) / _ \/ _` |/ _` | |_) |  _|   / _ \ \___ \ " + RESET)
-    print(GREEN + BOLD + r" |  _ <  __/ (_| | (_| |  __/| |___ / ___ \ ___) |" + RESET)
-    print(GREEN + BOLD + r" |_| \_\___|\__,_|\__,_|_|   |_____/_/   \_\____/ " + RESET)
-    print(DIM + f"  LinPEAS/WinPEAS output reader  v{_VERSION}" + RESET)
+    """Print the ReadPEAS ASCII banner, colored in Claude's brand orange on real terminals."""
+    r, g, b = _BANNER_RGB
+    print(_colorize(r"  ____                _ ____  _____    _    ____  ", r, g, b))
+    print(_colorize(r" |  _ \ ___  __ _  __| |  _ \| ____|  / \  / ___| ", r, g, b))
+    print(_colorize(r" | |_) / _ \/ _` |/ _` | |_) |  _|   / _ \ \___ \ ", r, g, b))
+    print(_colorize(r" |  _ <  __/ (_| | (_| |  __/| |___ / ___ \ ___) |", r, g, b))
+    print(_colorize(r" |_| \_\___|\__,_|\__,_|_|   |_____/_/   \_\____/ ", r, g, b))
+    print(DIM + f"  LinPEAS output reader  v{_VERSION}" + RESET)
     print()
 
 

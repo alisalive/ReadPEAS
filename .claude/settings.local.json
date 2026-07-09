@@ -203,7 +203,14 @@
       "Bash(cd \"C:/Users/User/ReadPEAS\" && python3 readpeas.py tests/samples/lp_fowsniff.txt --tldr)",
       "Bash(cd \"C:/Users/User/ReadPEAS\" && python3 readpeas.py tests/samples/lp_fowsniff.txt -o json | head -5)",
       "Bash(cd \"C:/Users/User/ReadPEAS\" && python3 readpeas.py tests/samples/lp_fowsniff.txt -o markdown && rm -f lp_fowsniff.md)",
-      "Bash(cd \"C:/Users/User/ReadPEAS\" && pytest tests/ -v 2>&1 | tail -20)"
+      "Bash(cd \"C:/Users/User/ReadPEAS\" && pytest tests/ -v 2>&1 | tail -20)",
+      "Bash(python3 readpeas.py tests/samples/lp_fowsniff.txt)",
+      "Read(//c/Users/User/ReadPEAS/**)",
+      "Bash(python3 readpeas.py --help)",
+      "Bash(cd \"C:/Users/User/ReadPEAS\" && python3 -c \"\nimport sys\nfrom output import terminal\nterminal.sys.stdout.isatty = lambda: True\nimport io\nbuf = io.StringIO\\(\\)\nold_stdout = sys.stdout\nsys.stdout = buf\nterminal.print_banner\\(\\)\nsys.stdout = old_stdout\nout = buf.getvalue\\(\\)\nprint\\(repr\\(out\\)\\)\n\")",
+      "Bash(cd \"C:/Users/User/ReadPEAS\" && python3 -c \"\nimport sys\nsys.stdout.isatty = lambda: True\nfrom output import terminal\nterminal.print_banner\\(\\)\n\" 2>&1 | python3 -c \"import sys; data = sys.stdin.buffer.read\\(\\); print\\(repr\\(data.decode\\(\\)\\)\\)\")",
+      "Bash(cd \"C:/Users/User/ReadPEAS\" && NO_COLOR=1 python3 -c \"\nimport sys\nsys.stdout.isatty = lambda: True\nfrom output import terminal\nterminal.print_banner\\(\\)\n\" 2>&1 | python3 -c \"import sys; data = sys.stdin.buffer.read\\(\\); print\\(repr\\(data.decode\\(\\)\\)\\)\")",
+      "Bash(cd \"C:/Users/User/ReadPEAS\" && pytest tests/ -v 2>&1 | tail -5)"
     ]
   }
 }

@@ -146,7 +146,7 @@ def main():
         prog="readpeas",
         usage="readpeas <file> [--ip IP] [--port PORT] [--tldr | --top | --all]",
         description=(
-            "Parse LinPEAS/WinPEAS output and show privesc commands.\n\n"
+            "Parse LinPEAS output and show privesc commands.\n\n"
             "Output modes (terminal, in order of precedence):\n"
             "  (default)  show ONLY the single best paste-ready privesc command\n"
             "  --tldr     print ONLY that command (or steps), nothing else\n"
@@ -155,7 +155,7 @@ def main():
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("file", nargs="?", metavar="FILE", help="path to LinPEAS/WinPEAS output file")
+    parser.add_argument("file", nargs="?", metavar="FILE", help="path to LinPEAS output file")
     parser.add_argument(
         "-f", "--file", dest="file_flag", metavar="FILE",
         help="alternate way to pass the file (deprecated, use the positional argument instead)",
