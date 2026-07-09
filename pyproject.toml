@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "readpeas"
+version = "0.1.0"
+description = "Parse LinPEAS output and get a ready-to-use privesc command instantly."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "alisalive" }]
+
+[project.scripts]
+readpeas = "readpeas:main"
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools]
+py-modules = ["readpeas"]
+
+[tool.setuptools.packages.find]
+include = ["core", "core.*", "modules", "modules.*", "output", "output.*"]

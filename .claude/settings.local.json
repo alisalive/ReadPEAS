@@ -168,7 +168,15 @@
       "Bash(python -c \"\nfrom core.parser import parse\nwith open\\('tests/samples/docker_overlay_container_signal.txt', encoding='utf-8'\\) as f:\n    raw = f.read\\(\\)\nresult = parse\\(raw\\)\nfor name, content in result['sections'].items\\(\\):\n    print\\(repr\\(name\\)\\)\n    print\\(repr\\(content\\)\\)\n\")",
       "Bash(python -c \"\nfrom core.parser import parse\nraw = open\\('tests/samples/docker_overlay_container_signal.txt', encoding='utf-8'\\).read\\(\\)\nprint\\(list\\(parse\\(raw\\)['sections'].keys\\(\\)\\)\\)\n\")",
       "Bash(python readpeas.py -f tests/samples/year_of_rabbit_sudo.txt --ip 10.10.10.10 --port 4444)",
-      "Bash(python readpeas.py -f tests/samples/dirtypipe_patched.txt --ip 10.10.10.10 --port 4444)"
+      "Bash(python readpeas.py -f tests/samples/dirtypipe_patched.txt --ip 10.10.10.10 --port 4444)",
+      "Bash(cd C:/Users/User/ReadPEAS && pip install -e . --break-system-packages 2>&1 | tail -30)",
+      "Bash(cd C:/Users/User/ReadPEAS && readpeas --all -f tests/samples/lp_fowsniff.txt --ip 192.168.158.220 --port 4444 2>&1\necho \"=== TOP ===\"\nreadpeas --top -f tests/samples/lp_fowsniff.txt --ip 192.168.158.220 --port 4444 2>&1)",
+      "Bash(cd C:/Users/User/ReadPEAS && PYTHONIOENCODING=utf-8 readpeas -f tests/samples/lp_fowsniff.txt --ip 192.168.158.220 --port 4444)",
+      "Bash(PYTHONIOENCODING=utf-8 readpeas --all -f tests/samples/lp_fowsniff.txt --ip 192.168.158.220 --port 4444)",
+      "Bash(cd C:/Users/User/ReadPEAS && pip install -e \".[dev]\" --break-system-packages 2>&1 | tail -15)",
+      "Read(//c/tmp/**)",
+      "Bash(readpeas --help)",
+      "Bash(readpeas -f C:/Users/User/ReadPEAS/tests/samples/lp_fowsniff.txt --ip 10.10.10.10 --port 4444)"
     ]
   }
 }
