@@ -144,6 +144,7 @@ def _read_input(file_path):
 def main():
     parser = argparse.ArgumentParser(
         prog="readpeas",
+        usage="readpeas <file> [--ip IP] [--port PORT] [--tldr | --top | --all]",
         description=(
             "Parse LinPEAS/WinPEAS output and show privesc commands.\n\n"
             "Output modes (terminal, in order of precedence):\n"
@@ -154,7 +155,11 @@ def main():
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("-f", "--file", metavar="FILE", help="path to LinPEAS/WinPEAS output file")
+    parser.add_argument("file", nargs="?", metavar="FILE", help="path to LinPEAS/WinPEAS output file")
+    parser.add_argument(
+        "-f", "--file", dest="file_flag", metavar="FILE",
+        help="alternate way to pass the file (deprecated, use the positional argument instead)",
+    )
     parser.add_argument(
         "-o", "--output",
         metavar="FORMAT",
@@ -192,13 +197,18 @@ def main():
     args = parser.parse_args()
 
     # ── Input ──────────────────────────────────────────────────────────────────
-    if args.file:
-        raw_text = _read_input(args.file)
+    filepath = args.file or args.file_flag
+
+    if filepath:
+        if not os.path.isfile(filepath):
+            sys.stderr.write(f"error: file not found: {filepath}\n")
+            sys.exit(1)
+        raw_text = _read_input(filepath)
     elif not sys.stdin.isatty():
         raw_text = sys.stdin.read()
     else:
         parser.print_usage(sys.stderr)
-        sys.stderr.write("error: provide -f FILE or pipe input via stdin\n")
+        sys.stderr.write("error: provide a file path, -f FILE, or pipe input via stdin\n")
         sys.exit(1)
 
     # ── Process ────────────────────────────────────────────────────────────────
@@ -212,7 +222,7 @@ def main():
     if args.output == "json":
         print(json.dumps(result, indent=2))
     elif args.output == "markdown":
-        _write_markdown(result, args.file)
+        _write_markdown(result, filepath)
     elif args.tldr:
         print_tldr(result, ip=args.ip, port=args.port)
     elif args.top:

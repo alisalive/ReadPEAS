@@ -176,7 +176,16 @@
       "Bash(cd C:/Users/User/ReadPEAS && pip install -e \".[dev]\" --break-system-packages 2>&1 | tail -15)",
       "Read(//c/tmp/**)",
       "Bash(readpeas --help)",
-      "Bash(readpeas -f C:/Users/User/ReadPEAS/tests/samples/lp_fowsniff.txt --ip 10.10.10.10 --port 4444)"
+      "Bash(readpeas -f C:/Users/User/ReadPEAS/tests/samples/lp_fowsniff.txt --ip 10.10.10.10 --port 4444)",
+      "Bash(pip install:*)",
+      "Bash(PYTHONIOENCODING=utf-8 readpeas tests/samples/lp_fowsniff.txt --all > /tmp/t1_all.txt 2>&1; echo done)",
+      "Bash(readpeas tests/samples/lp_fowsniff.txt --ip 10.10.10.10 --port 4444 > /tmp/t2.txt 2>&1; echo \"EXIT:$?\"; cat /tmp/t2.txt)",
+      "Bash(readpeas -f tests/samples/lp_fowsniff.txt --ip 10.10.10.10 --port 4444 > /tmp/t3.txt 2>&1; echo \"EXIT:$?\"; cat /tmp/t3.txt)",
+      "Bash(readpeas tests/samples/lp_fowsniff.txt --all > /tmp/t6.txt 2>&1; echo \"EXIT:$?\"; wc -l /tmp/t6.txt)",
+      "Bash(python3 -c \"\nimport sys\nsys.argv = ['readpeas']\nsys.stdin.isatty = lambda: True\nimport readpeas\ntry:\n    readpeas.main\\(\\)\nexcept SystemExit as e:\n    print\\('SystemExit code:', e.code, file=sys.stderr\\)\n\" 2>&1)",
+      "Bash(readpeas nonexistent_file.txt > /tmp/t8.txt 2>&1; echo \"EXIT:$?\"; cat /tmp/t8.txt)",
+      "Bash(python3 -m pytest tests/ -v 2>&1 | tail -40)",
+      "Bash(PYTHONIOENCODING=utf-8 readpeas tests/samples/lp_fowsniff.txt --all --ip 192.168.158.220 --port 4444 > /tmp/readme2.txt 2>&1; echo done)"
     ]
   }
 }

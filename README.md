@@ -24,15 +24,40 @@ pip dependencies, stdlib only).
 ## Quick start
 
 ```bash
-readpeas -f linpeas_output.txt
+readpeas linpeas_output.txt
 ```
 
-With `--ip`/`--port`, any `LHOST`/`LPORT` placeholder in a generated command is
-replaced with your attacker IP/port:
+`--ip`/`--port` are **your own attacker/listener address** — they have nothing
+to do with reading the LinPEAS file. They're only used to auto-fill the
+`LHOST`/`LPORT` placeholders in generated exploit commands that need a
+reverse-shell callback (e.g. appending a payload to a writable script). Any
+finding that doesn't need a callback (kernel exploits, sudo/SUID GTFOBins
+commands, etc.) ignores `--ip`/`--port` entirely.
 
 ```bash
-readpeas -f linpeas_output.txt --ip 10.10.14.5 --port 4444
+readpeas linpeas_output.txt --ip 10.10.14.5 --port 4444
 ```
+
+`-f`/`--file` still works as a deprecated alias for the file path
+(`readpeas -f linpeas_output.txt`), kept for backwards compatibility.
+
+---
+
+## Flags
+
+| Flag              | Description |
+|-------------------|--------------|
+| `file` (positional) | Path to LinPEAS output file (required, unless piping via stdin) |
+| `-f`, `--file`    | Alternate way to pass the file (deprecated, still supported) |
+| `--ip`            | Attacker LHOST — substituted into reverse-shell commands that need a callback |
+| `--port`          | Attacker LPORT — substituted into reverse-shell commands (default: `4444`) |
+| `--tldr`          | Print only the single best command, nothing else |
+| `--top`           | Print up to 3 best findings, compact |
+| `--all`           | Print every finding, fully decorated |
+| `--only`          | Filter findings by severity (`critical`, `high`, `info`, ...) |
+| `-o`, `--output`  | Output format: `terminal` (default), `json`, or `markdown` |
+| `--version`       | Show version and exit |
+| `-h`, `--help`    | Show usage |
 
 ---
 
@@ -41,7 +66,7 @@ readpeas -f linpeas_output.txt --ip 10.10.14.5 --port 4444
 Run against a real HTB Fowsniff LinPEAS dump:
 
 ```
-$ readpeas -f fowsniff_linpeas.txt --ip 192.168.158.220 --port 4444
+$ readpeas fowsniff_linpeas.txt --ip 192.168.158.220 --port 4444
 [CRITICAL] sudo -> vim (/usr/bin/vim)
   sudo /usr/bin/vim -c ':shell'
 
@@ -51,7 +76,7 @@ Run with --all to see all 5 findings.
 Same file with `--all` (every finding, fully decorated):
 
 ```
-$ readpeas --all -f fowsniff_linpeas.txt --ip 192.168.158.220 --port 4444
+$ readpeas fowsniff_linpeas.txt --all --ip 192.168.158.220 --port 4444
 [*] OS: linux
 [*] Total findings: 5
 
@@ -93,7 +118,7 @@ Other options (4 more):
 Same file with `--tldr` (paste-ready command, nothing else):
 
 ```
-$ readpeas --tldr -f fowsniff_linpeas.txt --ip 192.168.158.220 --port 4444
+$ readpeas fowsniff_linpeas.txt --tldr --ip 192.168.158.220 --port 4444
 sudo /usr/bin/vim -c ':shell'
 ```
 
