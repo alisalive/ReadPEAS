@@ -21,4 +21,7 @@ dev = ["pytest"]
 py-modules = ["readpeas"]
 
 [tool.setuptools.packages.find]
-include = ["core", "core.*", "modules", "modules.*", "output", "output.*"]
+include = ["core", "core.*", "modules", "modules.*", "output", "output.*", "data"]
+
+[tool.setuptools.package-data]
+data = ["*.json"]

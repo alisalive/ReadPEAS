@@ -22,7 +22,9 @@ Rule-based, no AI, installable via pip.
 - Phase 1 (done): core + Linux critical (sudo, suid, capabilities)
 - Phase 2 (done): Linux high (cron, writable passwd, PATH hijack, groups, ld_preload, nfs, etc.)
 - Phase 3: Windows (WinPEAS)
-- Phase 4 (partial): Polish — markdown export done; pip package pending
+- Phase 4 (done): Polish — markdown export, pip package (console entry point, positional
+  file arg, `-f` deprecated alias), data/gtfobins.json packaged in built wheels, LICENSE
+  (MIT), GitHub Actions CI (.github/workflows/tests.yml)
 
 ## Code standards
 - Python 3.8+ compatible
@@ -44,22 +46,23 @@ CRITICAL -> HIGH -> MEDIUM -> LOW -> INFO
 - [x] scripts/build_gtfobins.py
 - [x] core/parser.py                  — sub-header (╚═══╣) stripping added
 - [x] core/extractor.py
-- [x] modules/linux/sudo.py
-- [x] modules/linux/suid.py           — _KNOWN_SAFE set; unknown standard-path SUID → HIGH with note
-- [x] modules/linux/capabilities.py
-- [x] modules/linux/cron.py
-- [x] modules/linux/writable_passwd.py
-- [x] modules/linux/writable_cron.py  — skips "Contents of" headers to prevent false positives
-- [x] modules/linux/path_hijack.py
-- [x] modules/linux/groups.py
-- [x] modules/linux/pythonpath.py
-- [x] modules/linux/ld_preload.py     — TRY FIRST is gcc one-liner; files renamed to shell.c/shell.so
-- [x] modules/linux/nfs.py
-- [x] modules/linux/systemd_service.py
-- [x] modules/linux/logrotate.py
-- [x] modules/linux/mysql_udf.py
-- [x] modules/linux/docker_sock.py
-- [x] modules/linux/credentials.py    — reuse hint comment lines appended to commands
-- [x] modules/linux/wildcard_injection.py  — tar * in cron scripts → HIGH; checkpoint exploit
-- [x] output/terminal.py              — --ip/--port LHOST/LPORT substitution; suid note rendering
-- [x] readpeas.py (CLI)               — --ip, --port flags; -o markdown export
+- [x] core/priority.py                — severity + module-priority ranking for default/--top output modes
+- [x] core/dedup.py
+- [x] modules/linux/ (27 modules)     — sudo, suid, capabilities, cron, writable_cron,
+  writable_cron_d, writable_passwd, writable_exec_script, path_hijack, groups, pythonpath,
+  ld_preload, nfs, systemd_service, logrotate, mysql_udf, docker_sock, docker_group,
+  lxd_group, credentials, wildcard_injection, motd_writable, service_binary, ssh_keys,
+  screen_exploit, tmux_socket, kernel_exploit
+  (kernel_exploit.py: DirtyPipe/DirtyCow/PwnKit/Baron Samedit, curated CVEs only;
+  sudo.py includes CVE-2019-14287 `sudo -u#-1` NOPASSWD bypass detection)
+- [x] output/terminal.py              — --ip/--port LHOST/LPORT substitution; suid note
+  rendering; default/--tldr/--top/--all output modes
+- [x] readpeas.py (CLI)               — positional `file` arg (primary), `-f`/`--file` kept
+  as deprecated alias; --ip, --port, --only, -o (terminal/json/markdown), --tldr, --top,
+  --all, --version
+- [x] pip packaging                   — pyproject.toml, `readpeas` console entry point,
+  data/gtfobins.json bundled in built wheels (data/ is an included package with
+  package-data = ["*.json"]), verified via `python3 -m build` + clean-venv wheel install
+- [x] LICENSE                         — MIT, present at repo root
+- [x] .github/workflows/tests.yml     — CI running pytest on Python 3.8 and 3.12
+- Pytest: 260 tests passing (verify with `pytest tests/ -v`)
