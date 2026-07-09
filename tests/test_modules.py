@@ -26,6 +26,7 @@ from modules.linux.ssh_keys import analyze as ssh_keys_analyze
 from modules.linux.screen_exploit import analyze as screen_analyze
 from modules.linux.writable_cron_d import analyze as writable_cron_d_analyze
 from modules.linux.writable_exec_script import analyze as writable_exec_analyze
+from modules.linux.kernel_exploit import analyze as kernel_exploit_analyze
 
 
 # ── sudo.py ───────────────────────────────────────────────────────────────────
@@ -109,6 +110,47 @@ User ctf may run the following commands:
 """
         findings = sudo_analyze(text)
         assert any(f["binary"] == "ALL" and f["severity"] == "CRITICAL" for f in findings)
+
+    def test_sudo_all_not_root_nopasswd_triggers_uid_bypass(self):
+        """(ALL, !root) NOPASSWD entries are CVE-2019-14287, not a plain NOPASSWD rule."""
+        text = """
+Sudo version 1.8.16
+User gwendoline may run the following commands on
+        year-of-the-rabbit:
+    (ALL, !root) NOPASSWD: /usr/bin/vi /home/gwendoline/user.txt
+"""
+        findings = sudo_analyze(text)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f["type"] == "sudo_not_root_bypass"
+        assert f["severity"] == "CRITICAL"
+        assert f["cve"] == "CVE-2019-14287"
+        assert "sudo -u#-1 /usr/bin/vi /home/gwendoline/user.txt" in f["commands"]
+
+    def test_sudo_all_not_root_does_not_emit_naive_direct_command(self):
+        """The generic 'sudo <cmd>' finding must be suppressed for (ALL, !root) rules."""
+        text = """
+Sudo version 1.8.16
+User gwendoline may run the following commands on
+        year-of-the-rabbit:
+    (ALL, !root) NOPASSWD: /usr/bin/vi /home/gwendoline/user.txt
+"""
+        findings = sudo_analyze(text)
+        assert not any(f["type"] == "sudo" for f in findings)
+        blob = str(findings)
+        assert "sudo /usr/bin/vi /home/gwendoline/user.txt" not in blob
+
+    def test_sudo_all_not_root_patched_version_is_info(self):
+        """sudo >= 1.8.28 is patched against CVE-2019-14287 — bypass should not be CRITICAL."""
+        text = """
+Sudo version 1.8.31
+User gwendoline may run the following commands on
+        year-of-the-rabbit:
+    (ALL, !root) NOPASSWD: /usr/bin/vi /home/gwendoline/user.txt
+"""
+        findings = sudo_analyze(text)
+        assert len(findings) == 1
+        assert findings[0]["severity"] == "INFO"
 
 
 # ── suid.py ───────────────────────────────────────────────────────────────────
@@ -1394,3 +1436,105 @@ class TestOutputModes:
         print_tldr(result, ip="10.10.10.10", port=4444)
         out = capsys.readouterr().out
         assert out == ""
+
+
+# ── kernel_exploit.py ─────────────────────────────────────────────────────────
+
+class TestKernelExploit:
+    def test_dirtypipe_flagged_when_kernel_in_range(self):
+        text = """
+Linux version 5.13.0-39-generic (buildd@lgw01-amd64-054) (gcc version 9.3.0)
+[+] [CVE-2022-0847] DirtyPipe
+
+   Details: https://dirtypipe.cm4all.com/
+"""
+        findings = kernel_exploit_analyze(text)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f["cve"] == "CVE-2022-0847"
+        assert f["severity"] == "CRITICAL"
+        assert len(f["commands"]) > 0
+
+    def test_dirtypipe_not_flagged_when_kernel_patched(self):
+        text = """
+Linux version 5.16.15-generic (buildd@lgw01-amd64-054) (gcc version 9.3.0)
+[+] [CVE-2022-0847] DirtyPipe
+
+   Details: https://dirtypipe.cm4all.com/
+"""
+        findings = kernel_exploit_analyze(text)
+        assert len(findings) == 1
+        assert findings[0]["severity"] == "INFO"
+
+    def test_dirtypipe_unknown_kernel_is_high_not_critical(self):
+        text = "[+] [CVE-2022-0847] DirtyPipe\n"
+        findings = kernel_exploit_analyze(text)
+        assert len(findings) == 1
+        assert findings[0]["severity"] == "HIGH"
+
+    def test_pwnkit_critical_when_pkexec_suid(self):
+        text = """
+[+] [CVE-2021-4034] PwnKit
+-rwsr-xr-x 1 root root 31032 May 26 2021 /usr/bin/pkexec
+"""
+        findings = kernel_exploit_analyze(text)
+        f = next(x for x in findings if x["cve"] == "CVE-2021-4034")
+        assert f["severity"] == "CRITICAL"
+
+    def test_pwnkit_false_positive_when_pkexec_not_suid(self):
+        """RouterSpace case: pkexec present but -rwxr-xr-x (no SUID bit) -> not exploitable."""
+        text = """
+[+] [CVE-2021-4034] PwnKit
+-rwxr-xr-x 1 root root 31032 May 26 2021 /usr/bin/pkexec
+"""
+        findings = kernel_exploit_analyze(text)
+        f = next(x for x in findings if x["cve"] == "CVE-2021-4034")
+        assert f["severity"] == "INFO"
+
+    def test_baron_samedit_critical_when_sudo_version_vulnerable(self):
+        text = """
+Sudo version 1.8.31
+[+] [CVE-2021-3156] sudo Baron Samedit
+"""
+        findings = kernel_exploit_analyze(text)
+        f = next(x for x in findings if x["cve"] == "CVE-2021-3156")
+        assert f["severity"] == "CRITICAL"
+
+    def test_baron_samedit_info_when_sudo_version_patched(self):
+        text = """
+Sudo version 1.9.5p2
+[+] [CVE-2021-3156] sudo Baron Samedit
+"""
+        findings = kernel_exploit_analyze(text)
+        f = next(x for x in findings if x["cve"] == "CVE-2021-3156")
+        assert f["severity"] == "INFO"
+
+    def test_kernel_exploit_no_duplicate_with_existing_cve_modules(self):
+        """PwnKit/Baron Samedit are not implemented elsewhere; only kernel_exploit should fire,
+        and only for the curated CVE set — non-curated suggester hits are ignored."""
+        text = """
+[+] [CVE-2021-4034] PwnKit
+-rwsr-xr-x 1 root root 31032 May 26 2021 /usr/bin/pkexec
+
+[+] [CVE-2021-3156] sudo Baron Samedit
+
+Sudo version 1.8.31
+
+[+] [CVE-2021-22555] Netfilter heap out-of-bounds write
+
+[+] [CVE-2017-5618] setuid screen v4.5.0 LPE
+"""
+        findings = kernel_exploit_analyze(text)
+        cves = {f["cve"] for f in findings}
+        assert cves == {"CVE-2021-4034", "CVE-2021-3156"}
+        assert len(findings) == 2  # no duplicates, non-curated CVEs ignored
+
+    def test_dirtycow_always_critical_no_version_check(self):
+        text = "[+] [CVE-2016-5195] DirtyCow\n"
+        findings = kernel_exploit_analyze(text)
+        f = next(x for x in findings if x["cve"] == "CVE-2016-5195")
+        assert f["severity"] == "CRITICAL"
+
+    def test_no_curated_cve_returns_no_findings(self):
+        text = "[+] [CVE-2021-22555] Netfilter heap out-of-bounds write\n"
+        assert kernel_exploit_analyze(text) == []

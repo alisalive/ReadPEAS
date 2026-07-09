@@ -76,6 +76,12 @@ def _finding_md_title(f: Dict) -> str:
         return f"{ftype} — {f.get('cron_path', '')} (writable cron.d file)"
     elif ftype == "writable_exec_script":
         return f"{ftype} — {f.get('script_path', '')} (group-writable executable script)"
+    elif ftype == "sudo_not_root_bypass":
+        binary    = f.get("binary", "")
+        full_path = f.get("full_path", "")
+        return f"{ftype} — {binary} ({full_path}) [{f.get('cve', '')}]"
+    elif ftype == "kernel_exploit":
+        return f"{ftype} — {f.get('name', '')} ({f.get('cve', '')})"
     else:
         return f"{ftype} — {f.get('full_path', f.get('file', ''))}"
 

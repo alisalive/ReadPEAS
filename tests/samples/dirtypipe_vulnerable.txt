@@ -1,0 +1,13 @@
+╔══════════╣ Operative system
+Linux version 5.13.0-39-generic (buildd@lgw01-amd64-054) (gcc version 9.3.0 (Ubuntu 9.3.0-17ubuntu1~20.04)) #44-Ubuntu SMP
+Distributor ID: Ubuntu
+Description:    Ubuntu 20.04.3 LTS
+Release:        20.04
+Codename:       focal
+
+╔══════════╣ Executing Linux Exploit Suggester
+╚ https://github.com/mzet-/linux-exploit-suggester
+[+] [CVE-2022-0847] DirtyPipe
+
+   Details: https://dirtypipe.cm4all.com/
+   Exposure: highly probable

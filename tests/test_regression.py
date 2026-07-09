@@ -39,6 +39,9 @@ _SAMPLES = [
     ("disk_group.txt",      1, True),
     ("writable_exec_script.txt", 1, False),
     ("lp_fowsniff.txt",          5, True),
+    ("year_of_rabbit_sudo.txt",  1, True),
+    ("dirtypipe_vulnerable.txt", 1, True),
+    ("dirtypipe_patched.txt",    1, False),
 ]
 
 _SAMPLES_DIR = os.path.join(os.path.dirname(__file__), "samples")

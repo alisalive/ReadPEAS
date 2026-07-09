@@ -30,6 +30,7 @@ from modules.linux.ssh_keys import analyze as analyze_ssh_keys
 from modules.linux.screen_exploit import analyze as analyze_screen_exploit
 from modules.linux.writable_cron_d import analyze as analyze_writable_cron_d
 from modules.linux.writable_exec_script import analyze as analyze_writable_exec
+from modules.linux.kernel_exploit import analyze as analyze_kernel_exploit
 
 # Maps each analyzer to the LinPEAS section name keywords it handles.
 # Keywords are matched case-insensitively as substrings of the section name.
@@ -67,6 +68,7 @@ MODULE_SECTIONS = [
     (analyze_screen_exploit,["suid"]),
     (analyze_writable_cron_d, ["cron", "writable", "interesting files"]),
     (analyze_writable_exec, ["group writable", "executable", "writable", "interesting writable", "added by user"]),
+    (analyze_kernel_exploit, ["cve", "exploit suggester", "operative system", "sudo version", "suid"]),
 ]
 
 _SEVERITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}

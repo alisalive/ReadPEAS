@@ -20,7 +20,8 @@ _ELIGIBLE_SEVERITIES = ("CRITICAL", "HIGH", "MEDIUM")
 
 # Explicit tie-break order: earlier entries win when severity is equal.
 MODULE_PRIORITY: List[str] = [
-    "sudo", "suid", "capabilities", "writable_exec_script", "writable_cron",
+    "sudo", "sudo_not_root_bypass", "suid", "capabilities", "kernel_exploit",
+    "writable_exec_script", "writable_cron",
     "cron", "writable_cron_d", "motd_writable", "lxd_group", "docker_group",
     "docker_sock", "screen_exploit", "nfs", "systemd_service", "logrotate",
     "mysql_udf", "service_binary", "ld_preload", "pythonpath", "ssh_keys",
@@ -46,7 +47,10 @@ _LEADING_STOP_AT_COMMENT = {"nfs", "mysql_udf"}
 _LEADING_PLUS_TRAILING = {"systemd_service", "logrotate", "service_binary"}
 
 # Types where every comment line is just noise — keep everything else, in order.
-_SEQUENCE_FILTER_COMMENTS = {"credentials", "wildcard_injection", "ssh_keys", "screen_exploit"}
+_SEQUENCE_FILTER_COMMENTS = {
+    "credentials", "wildcard_injection", "ssh_keys", "screen_exploit",
+    "sudo_not_root_bypass", "kernel_exploit",
+}
 
 # Types where the real commands are the contiguous non-comment run right after
 # the first comment line (label comment, then real steps, then trailing comment).

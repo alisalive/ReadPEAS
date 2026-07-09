@@ -1,0 +1,14 @@
+╔══════════╣ Basic information
+OS: Linux year-of-the-rabbit 4.4.0-142-generic #168-Ubuntu SMP x86_64 GNU/Linux
+User & Groups: uid=1000(gwendoline) gid=1000(gwendoline) groups=1000(gwendoline)
+
+╔══════════╣ Sudo version
+Sudo version 1.8.16
+
+╔══════════╣ Checking sudo permissions
+Matching Defaults entries for gwendoline on year-of-the-rabbit:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+User gwendoline may run the following commands on
+        year-of-the-rabbit:
+    (ALL, !root) NOPASSWD: /usr/bin/vi /home/gwendoline/user.txt

@@ -135,6 +135,12 @@ def _finding_header(finding: Dict) -> str:
         header = f"[{severity}] {ftype} -> {finding.get('cron_path', '')}  ({finding.get('description', 'world-writable cron.d file')})"
     elif ftype == "writable_exec_script":
         header = f"[{severity}] {ftype} -> {finding.get('script_path', '')}  ({finding.get('description', 'group-writable exec script')})"
+    elif ftype == "sudo_not_root_bypass":
+        binary = finding.get("binary", "")
+        full_path = finding.get("full_path", "")
+        header = f"[{severity}] {ftype} -> {binary} ({full_path})  [{finding.get('cve', '')}]"
+    elif ftype == "kernel_exploit":
+        header = f"[{severity}] {ftype} -> {finding.get('name', '')}  [{finding.get('cve', '')}]"
     else:
         # sudo / suid / capabilities
         binary    = finding.get("binary", "")
