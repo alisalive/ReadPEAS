@@ -7,7 +7,7 @@ import sys
 from typing import Dict, List, Optional
 
 from core.extractor import extract
-from output.terminal import print_results, print_default, print_tldr, print_top
+from output.terminal import print_results, print_default, print_tldr, print_top, print_banner
 
 _VERSION = "0.1.0"
 
@@ -195,6 +195,13 @@ def main():
     parser.add_argument("--version", action="version", version=f"%(prog)s {_VERSION}")
 
     args = parser.parse_args()
+
+    # ── Banner ─────────────────────────────────────────────────────────────────
+    # Always shown, except: -o json/markdown (machine/file output), and --tldr
+    # when stdout is piped/redirected (paste-ready output must stay clean).
+    suppress_banner = args.output in ("json", "markdown") or (args.tldr and not sys.stdout.isatty())
+    if not suppress_banner:
+        print_banner()
 
     # ── Input ──────────────────────────────────────────────────────────────────
     filepath = args.file or args.file_flag

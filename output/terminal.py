@@ -191,8 +191,7 @@ def print_results(
     ip: Optional[str] = None,
     port: int = 4444,
 ) -> None:
-    """Print banner, summary, and all findings; filter by severity if specified."""
-    print_banner()
+    """Print summary and all findings; filter by severity if specified."""
     print_summary(result)
 
     findings = result.get("findings", [])
