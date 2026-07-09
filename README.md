@@ -1,4 +1,9 @@
-# ReadPEAS
+  ____                _ ____  _____    _    ____  
+ |  _ \ ___  __ _  __| |  _ \| ____|  / \  / ___| 
+ | |_) / _ \/ _` |/ _` | |_) |  _|   / _ \ \___ \ 
+ |  _ <  __/ (_| | (_| |  __/| |___ / ___ \ ___) |
+ |_| \_\___|\__,_|\__,_|_|   |_____/_/   \_\____/ 
+                                                  
 
 ReadPEAS turns LinPEAS output into one copy-paste command to root. Point it at a
 LinPEAS dump and it tells you the single best privesc command to run — no AI, no
