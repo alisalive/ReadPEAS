@@ -58,12 +58,10 @@ def print_summary(result: Dict) -> None:
     print()
 
 
-def print_finding(finding: Dict, ip: Optional[str] = None, port: int = 4444) -> None:
-    """Print a single finding with severity, type, target, and commands."""
+def _finding_header(finding: Dict) -> str:
+    """Return the one-line "[SEVERITY] type -> target (...)" header for a finding."""
     severity = finding.get("severity", "INFO")
     ftype    = finding.get("type", "")
-    commands = finding.get("commands", [])
-    color    = severity_color(severity)
 
     # Build header based on finding type
     if ftype in ("cron", "writable_cron"):
@@ -148,7 +146,17 @@ def print_finding(finding: Dict, ip: Optional[str] = None, port: int = 4444) -> 
         if ftype == "sudo" and not finding.get("nopasswd", True):
             header += "  (password required)"
 
-    print(color + header + RESET)
+    return header
+
+
+def print_finding(finding: Dict, ip: Optional[str] = None, port: int = 4444) -> None:
+    """Print a single finding with severity, type, target, and commands."""
+    severity = finding.get("severity", "INFO")
+    ftype    = finding.get("type", "")
+    commands = finding.get("commands", [])
+    color    = severity_color(severity)
+
+    print(color + _finding_header(finding) + RESET)
 
     # Show investigation note for unknown SUID binaries
     if ftype == "suid" and finding.get("note"):
@@ -193,6 +201,65 @@ def print_results(
     if not findings:
         print(DIM + "No findings to display." + RESET)
     print()
+
+
+def print_default(result: Dict, ip: Optional[str] = None, port: int = 4444) -> None:
+    """Print only the single best privesc finding: one-line header + paste-ready command(s)."""
+    from core.priority import select_best
+
+    findings = result.get("findings", [])
+    total = result.get("total", len(findings))
+    best, manual_only = select_best(findings)
+
+    if best is None:
+        print(DIM + "No actionable privesc findings." + RESET)
+        return
+
+    color = severity_color(best.get("severity", "INFO"))
+    print(color + _finding_header(best) + RESET)
+
+    if manual_only:
+        print(DIM + "  Manual investigation required — no direct paste-ready command." + RESET)
+        print(DIM + "  See --all for details." + RESET)
+    else:
+        for cmd in best.get("primary_command", []):
+            print("  " + _inject_ip_port(cmd, ip, port))
+
+    print()
+    print(DIM + f"Run with --all to see all {total} findings." + RESET)
+
+
+def print_tldr(result: Dict, ip: Optional[str] = None, port: int = 4444) -> None:
+    """Print only the raw paste-ready command(s) for the single best finding — nothing else."""
+    from core.priority import select_best
+
+    findings = result.get("findings", [])
+    best, manual_only = select_best(findings)
+    if best is None or manual_only:
+        return
+
+    for cmd in best.get("primary_command", []):
+        print(_inject_ip_port(cmd, ip, port))
+
+
+def print_top(result: Dict, ip: Optional[str] = None, port: int = 4444, n: int = 3) -> None:
+    """Print up to n distinct paste-ready findings, compact: one-line label + command(s)."""
+    from core.priority import select_top
+
+    findings = result.get("findings", [])
+    top = select_top(findings, n)
+
+    if not top:
+        print(DIM + "No paste-ready findings." + RESET)
+        return
+
+    for i, finding in enumerate(top, start=1):
+        color = severity_color(finding.get("severity", "INFO"))
+        print(color + f"{i}. " + _finding_header(finding) + RESET)
+        for cmd in finding.get("primary_command", []):
+            print("     " + _inject_ip_port(cmd, ip, port))
+        if i < len(top):
+            print()
 
 
 # ── CLI self-test ──────────────────────────────────────────────────────────────

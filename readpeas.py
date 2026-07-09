@@ -7,7 +7,7 @@ import sys
 from typing import Dict, List, Optional
 
 from core.extractor import extract
-from output.terminal import print_results
+from output.terminal import print_results, print_default, print_tldr, print_top
 
 _VERSION = "0.1.0"
 
@@ -138,7 +138,15 @@ def _read_input(file_path):
 def main():
     parser = argparse.ArgumentParser(
         prog="readpeas",
-        description="Parse LinPEAS/WinPEAS output and show privesc commands.",
+        description=(
+            "Parse LinPEAS/WinPEAS output and show privesc commands.\n\n"
+            "Output modes (terminal, in order of precedence):\n"
+            "  (default)  show ONLY the single best paste-ready privesc command\n"
+            "  --tldr     print ONLY that command (or steps), nothing else\n"
+            "  --top      print up to 3 best paste-ready findings, compact\n"
+            "  --all      show every finding, fully decorated (old default behavior)"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("-f", "--file", metavar="FILE", help="path to LinPEAS/WinPEAS output file")
     parser.add_argument(
@@ -160,6 +168,18 @@ def main():
         type=int,
         default=4444,
         help="attacker port (replaces LPORT in all commands, default 4444)",
+    )
+    parser.add_argument(
+        "--all", action="store_true",
+        help="show every finding with full decoration (old default terminal behavior)",
+    )
+    parser.add_argument(
+        "--tldr", action="store_true",
+        help="print ONLY the single best paste-ready command(s), nothing else",
+    )
+    parser.add_argument(
+        "--top", action="store_true",
+        help="print up to 3 best paste-ready findings, compact",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {_VERSION}")
 
@@ -187,8 +207,14 @@ def main():
         print(json.dumps(result, indent=2))
     elif args.output == "markdown":
         _write_markdown(result, args.file)
-    else:
+    elif args.tldr:
+        print_tldr(result, ip=args.ip, port=args.port)
+    elif args.top:
+        print_top(result, ip=args.ip, port=args.port)
+    elif args.all:
         print_results(result, only_severity=args.only, ip=args.ip, port=args.port)
+    else:
+        print_default(result, ip=args.ip, port=args.port)
 
 
 if __name__ == "__main__":

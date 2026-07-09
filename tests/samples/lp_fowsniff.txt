@@ -17,14 +17,14 @@ uid=1001(sarah) gid=1001(sarah) groups=1001(sarah),4(adm),1003(users)
 -rwxr-sr-x 1 root postdrop 14424 Jan 28 2021 /usr/sbin/postdrop
 -rwxr-sr-x 1 root postdrop 22600 Jan 28 2021 /usr/sbin/postqueue
 
-╔══════════╣ Capabilities
-╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#capabilities
-/usr/bin/systemd-detect-virt = cap_dac_override,cap_sys_ptrace+ep
-
 ╔══════════╣ Checking 'sudo -l', /etc/sudoers, and /etc/sudoers.d
 ╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#sudo-and-suid
 User sarah may run the following commands on fowsniff:
     (root) NOPASSWD: /usr/bin/vim
+
+╔══════════╣ Capabilities
+╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#capabilities
+/usr/bin/systemd-detect-virt = cap_dac_override,cap_sys_ptrace+ep
 
 ╔══════════╣ Interesting GROUP writable files (not in Home) (max 200)
 ╚ https://book.hacktricks.xyz/linux-hardening/privilege-escalation#writable-files

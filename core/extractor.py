@@ -3,6 +3,7 @@
 from typing import Dict, List
 
 from core.parser import parse
+from core.priority import attach_primary_commands
 from modules.linux.sudo import analyze as analyze_sudo
 from modules.linux.suid import analyze as analyze_suid
 from modules.linux.capabilities import analyze as analyze_capabilities
@@ -132,6 +133,7 @@ def extract(raw_text: str) -> Dict:
         ]
 
     findings.sort(key=lambda f: _SEVERITY_ORDER.get(f.get("severity", "INFO"), 4))
+    findings = attach_primary_commands(findings)
 
     return {
         "os": os_name,
